@@ -12,7 +12,9 @@ Simple image editor for Apple II lo-res, double lo-res, hi-res, and double hi-re
 ## Files
 - `index.html`: UI layout and dialogs.
 - `style.css`: layout and visual design.
-- `script.js`: rendering, tools, file handling, mode encoders/decoders.
+- `app.js`: UI wiring, state, rendering, and interactions.
+- `image-tools.js`: drawing helpers (line, rectangle, flood fill).
+- `apple2-modes.js`: Apple II mode definitions, palette handling, and encode/decode logic.
 
 ---
 May the **SOURCE** be with you...
