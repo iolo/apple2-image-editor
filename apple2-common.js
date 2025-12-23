@@ -11,13 +11,21 @@ export const paletteHgr = [
 
 export const paletteBitmap = ["#000000", "#FFFFFF"];
 export const paletteHgrMono = paletteBitmap;
+export const paletteDhgrMono = paletteBitmap;
+export const paletteDhgrColor = [
+  "#000000", "#011EA9", "#00872D", "#2F45FF",
+  "#9A6800", "#B9B9B9", "#00DE00", "#53FAD0",
+  "#E72442", "#E649E4", "#686868", "#78BBFF",
+  "#FF7C00", "#FFAB99", "#FFFC00", "#FFFFFF",
+];
 
 export const modes = {
   lores: { id: "lores", name: "Lo-Res", width: 40, height: 48, ext: "GR", palette: paletteLores },
   dlores: { id: "dlores", name: "Double Lo-Res", width: 80, height: 48, ext: "DGR", palette: paletteLores },
   hgrColor: { id: "hgrColor", name: "Hi-Res Color", width: 140, height: 192, ext: "HGR", palette: paletteHgr },
   hgrMono: { id: "hgrMono", name: "Hi-Res Mono", width: 280, height: 192, ext: "HGR", palette: paletteHgrMono },
-  dhgr: { id: "dhgr", name: "Double Hi-Res", width: 560, height: 192, ext: "DHGR", palette: paletteLores },
+  dhgrColor: { id: "dhgrColor", name: "Double Hi-Res Color", width: 140, height: 192, ext: "DHGR", palette: paletteDhgrColor },
+  dhgrMono: { id: "dhgrMono", name: "Double Hi-Res Mono", width: 560, height: 192, ext: "DHGR", palette: paletteDhgrMono },
   pixmap: { id: "pixmap", name: "Pixmap", ext: "PIXMAP", palette: null },
   bitmap: { id: "bitmap", name: "Bitmap", ext: "BITMAP", palette: paletteBitmap },
 };
@@ -26,7 +34,7 @@ const sizeSignatures = {
   0x400: "lores",
   0x800: "dlores",
   0x2000: "hgrColor",
-  0x4000: "dhgr",
+  0x4000: "dhgrColor",
 };
 
 export const loresAddress = (x, row) => (row & 0x07) * 0x80 + (row >> 3) * 0x28 + x;

@@ -4,8 +4,8 @@ This document describes how the editor stores, loads, and renders Apple II doubl
 
 ## Summary
 
-- Resolution: 560 x 192
-- Colors: 16 (lo-res palette)
+- Double Hi-Res Color (DHGR color): 140 x 192, 16 colors (lo-res palette)
+- Double Hi-Res Mono (DHGR mono): 560 x 192, 2 colors (black, white)
 - File extension: `.DHGR`
 - File size: 0x4000 bytes (16 KB)
 - Storage: main + auxiliary memory (0x2000 each)
@@ -71,3 +71,11 @@ This mapping is implemented in `apple2-dhgr.js` in `dhgrColorFromBits(...)`, wit
 
 The `.DHGR` file is a raw dump of both banks (main first, aux second). There is no header.
 
+## Editor Modes
+
+The editor exposes two DHGR modes that share the same 0x4000-byte framebuffer:
+
+- Double Hi-Res Color (140x192): Renders each group of 4 DHGR bits as a 4-bit color index (0..15) without artifact blending.
+- Double Hi-Res Mono (560x192): Renders any set bit as white on black.
+
+Switching between these modes is purely representational; the underlying buffer and `.DHGR` file format are unchanged.

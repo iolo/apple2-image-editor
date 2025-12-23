@@ -53,6 +53,15 @@
             </select>
           </label>
         </div>
+        <div class="tool-row">
+          <label class="inline">
+            Double Hi-Res mode
+            <select id="dhgrModeSelect">
+              <option value="dhgrColor">Color (140x192)</option>
+              <option value="dhgrMono">Mono (560x192)</option>
+            </select>
+          </label>
+        </div>
         <div class="tool-row color-preview">
           <div>
             <div class="swatch-label">FG</div>
@@ -112,7 +121,8 @@
           <option value="dlores">Double Lo-Res (80x48, .DGR)</option>
           <option value="hgrColor">Hi-Res Color (140x192, .HGR)</option>
           <option value="hgrMono">Hi-Res Mono (280x192, .HGR)</option>
-          <option value="dhgr">Double Hi-Res (560x192, .DHGR)</option>
+          <option value="dhgrColor">Double Hi-Res Color (140x192, .DHGR)</option>
+          <option value="dhgrMono">Double Hi-Res Mono (560x192, .DHGR)</option>
           <option value="pixmap">Pixmap (custom size, 256 colors, .PIXMAP)</option>
           <option value="bitmap">Bitmap (custom size, 2 colors, .BITMAP)</option>
         </select>

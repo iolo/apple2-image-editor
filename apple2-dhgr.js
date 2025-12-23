@@ -1,15 +1,4 @@
-import { colorStringToRGBA, hgrAddress, paletteLores } from "./apple2-common.js";
-
-const colorDistanceSq = (c1, c2) => {
-  const [r1, g1, b1] = c1;
-  const [r2, g2, b2] = c2;
-  const dr = r1 - r2;
-  const dg = g1 - g2;
-  const db = b1 - b2;
-  return dr * dr + dg * dg + db * db;
-};
-
-const paletteLoresRGB = paletteLores.map(colorStringToRGBA);
+import { hgrAddress } from "./apple2-common.js";
 
 const dhgrColorFromBits = (mainBit, auxBit, mainPhase, auxPhase, xParity) => {
   const both = mainBit && auxBit;
@@ -100,6 +89,110 @@ export const dhgrHandler = {
       aux: new Uint8Array(buffer.slice(0x2000)),
       width: opts.width,
       height: opts.height,
+    };
+  },
+};
+
+const dhgrBitAt = (data, x, y) => {
+  if (x < 0 || x >= data.width || y < 0 || y >= data.height) return 0;
+  const column = x >> 1;
+  const offset = hgrAddress(column, y);
+  const mask = 1 << (column % 7);
+  const mainByte = data.main[offset] || 0;
+  const auxByte = data.aux[offset] || 0;
+  return (mainByte & mask) || (auxByte & mask) ? 1 : 0;
+};
+
+const dhgrNibbleAt = (data, x, y) => {
+  const baseX = x * 4;
+  if (baseX < 0 || baseX + 3 >= data.width) return 0;
+  const b0 = dhgrBitAt(data, baseX, y);
+  const b1 = dhgrBitAt(data, baseX + 1, y);
+  const b2 = dhgrBitAt(data, baseX + 2, y);
+  const b3 = dhgrBitAt(data, baseX + 3, y);
+  return (b0 ? 1 : 0) | (b1 ? 2 : 0) | (b2 ? 4 : 0) | (b3 ? 8 : 0);
+};
+
+const setDhgrBitAt = (data, x, y, on) => {
+  if (x < 0 || x >= data.width || y < 0 || y >= data.height) return;
+  const column = x >> 1;
+  const offset = hgrAddress(column, y);
+  const mask = 1 << (column % 7);
+  if (x & 1) {
+    const auxByte = data.aux[offset] || 0;
+    data.aux[offset] = on ? (auxByte | mask) : (auxByte & ~mask);
+  } else {
+    const mainByte = data.main[offset] || 0;
+    data.main[offset] = on ? (mainByte | mask) : (mainByte & ~mask);
+  }
+};
+
+export const dhgrColorHandler = {
+  create() {
+    return dhgrHandler.create({ width: 560, height: 192 });
+  },
+  clone(data) {
+    return dhgrHandler.clone(data);
+  },
+  getPixel(data, x, y) {
+    return dhgrNibbleAt(data, x, y);
+  },
+  setPixel(data, x, y, color) {
+    const baseX = x * 4;
+    const value = color & 0x0f;
+    setDhgrBitAt(data, baseX, y, (value & 0x01) !== 0);
+    setDhgrBitAt(data, baseX + 1, y, (value & 0x02) !== 0);
+    setDhgrBitAt(data, baseX + 2, y, (value & 0x04) !== 0);
+    setDhgrBitAt(data, baseX + 3, y, (value & 0x08) !== 0);
+  },
+  toFile(data) {
+    return dhgrHandler.toFile(data);
+  },
+  fromFile(buffer, opts) {
+    if (buffer.byteLength !== 0x4000) throw new Error("Expected 0x4000 bytes for .DHGR");
+    return {
+      main: new Uint8Array(buffer.slice(0, 0x2000)),
+      aux: new Uint8Array(buffer.slice(0x2000)),
+      width: 560,
+      height: 192,
+    };
+  },
+};
+
+export const dhgrMonoHandler = {
+  create() {
+    return dhgrHandler.create({ width: 560, height: 192 });
+  },
+  clone(data) {
+    return dhgrHandler.clone(data);
+  },
+  getPixel(data, x, y) {
+    return dhgrBitAt(data, x, y);
+  },
+  setPixel(data, x, y, color) {
+    const column = x >> 1;
+    const offset = hgrAddress(column, y);
+    const mask = 1 << (column % 7);
+    const mainByte = data.main[offset] || 0;
+    const auxByte = data.aux[offset] || 0;
+    if (color === 0) {
+      data.main[offset] = mainByte & ~mask;
+      data.aux[offset] = auxByte & ~mask;
+    } else {
+      data.main[offset] = mainByte | mask;
+      data.aux[offset] = auxByte | mask;
+    }
+  },
+  toFile(data) {
+    return dhgrHandler.toFile(data);
+  },
+  fromFile(buffer, opts) {
+    if (buffer.byteLength !== 0x4000) throw new Error("Expected 0x4000 bytes for .DHGR");
+    return {
+      main: new Uint8Array(buffer.slice(0, 0x2000)),
+      aux: new Uint8Array(buffer.slice(0x2000)),
+      width: 560,
+      height: 192,
     };
   },
 };

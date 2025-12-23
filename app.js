@@ -40,6 +40,7 @@ const elements = {
   dimHeight: document.getElementById("dimHeight"),
   gridToggle: document.getElementById("gridToggle"),
   hgrModeSelect: document.getElementById("hgrModeSelect"),
+  dhgrModeSelect: document.getElementById("dhgrModeSelect"),
   toolButtons: document.getElementById("toolButtons"),
 };
 
@@ -110,6 +111,7 @@ const refreshColorPreview = () => {
 };
 
 const isHgrMode = (modeId) => modeId === "hgrColor" || modeId === "hgrMono";
+const isDhgrMode = (modeId) => modeId === "dhgrColor" || modeId === "dhgrMono";
 
 const updateHgrModeControl = () => {
   if (!elements.hgrModeSelect) return;
@@ -117,6 +119,15 @@ const updateHgrModeControl = () => {
   elements.hgrModeSelect.disabled = !active;
   if (active) {
     elements.hgrModeSelect.value = state.mode.id;
+  }
+};
+
+const updateDhgrModeControl = () => {
+  if (!elements.dhgrModeSelect) return;
+  const active = isDhgrMode(state.mode.id);
+  elements.dhgrModeSelect.disabled = !active;
+  if (active) {
+    elements.dhgrModeSelect.value = state.mode.id;
   }
 };
 
@@ -271,6 +282,7 @@ const setMode = (modeId, width, height, opts = {}) => {
   state.caret.y = clamp(state.caret.y, 0, state.height - 1);
   updatePaletteGrid();
   updateHgrModeControl();
+  updateDhgrModeControl();
   render();
 };
 
@@ -342,6 +354,7 @@ const handleFileOpen = async (file) => {
     state.redo = [];
     updatePaletteGrid();
     updateHgrModeControl();
+    updateDhgrModeControl();
     render();
   } catch (err) {
     if (err && err.message !== "cancelled") {
@@ -395,6 +408,14 @@ const setupToolbar = () => {
     elements.hgrModeSelect.addEventListener("change", (ev) => {
       const nextMode = ev.target.value;
       if (!isHgrMode(nextMode)) return;
+      setMode(nextMode, modes[nextMode].width, modes[nextMode].height, { preserveData: true });
+    });
+  }
+
+  if (elements.dhgrModeSelect) {
+    elements.dhgrModeSelect.addEventListener("change", (ev) => {
+      const nextMode = ev.target.value;
+      if (!isDhgrMode(nextMode)) return;
       setMode(nextMode, modes[nextMode].width, modes[nextMode].height, { preserveData: true });
     });
   }
