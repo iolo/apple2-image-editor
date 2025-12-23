@@ -31,7 +31,8 @@ export const loresAddress = (x, row) => (row & 0x07) * 0x80 + (row >> 3) * 0x28 
 
 export const hgrAddress = (x, y) => {
   const byteX = Math.floor(x / 7);
-  return (y & 0x07) * 0x400 + (y >> 3) * 0x80 + byteX;
+  // Apple II HGR interleaves 8-line blocks across 3 sections.
+  return (y & 0x07) * 0x400 + ((y >> 3) & 0x07) * 0x80 + (y >> 6) * 0x28 + byteX;
 };
 
 export const clamp = (v, min, max) => Math.max(min, Math.min(max, v));

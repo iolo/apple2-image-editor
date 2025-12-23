@@ -27,9 +27,9 @@ export const hgrHandler = {
     const phase = (byte & 0x80) ? 1 : 0;
     const even = (x & 1) === 0;
     if (phase === 0) {
-      return even ? 2 : 1; // green : purple
+      return even ? 1 : 2; // purple : green
     }
-    return even ? 3 : 4; // orange : blue
+    return even ? 4 : 3; // blue : orange
   },
   setPixel(data, x, y, color) {
     const offset = hgrAddress(x, y);
