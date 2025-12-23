@@ -1,0 +1,25 @@
+{
+  "name": "apple2-image-editor",
+  "version": "1.0.0",
+  "description": "Simple image editor for Apple II lo-res, double lo-res, hi-res, and double hi-res graphics. No build step, no server—open `index.html` in a modern browser.",
+  "main": "app.js",
+  "scripts": {
+    "test": "node smoke-check.mjs",
+    "test:e2e": "node e2e-test.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iolo/apple2-image-editor.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/iolo/apple2-image-editor/issues"
+  },
+  "homepage": "https://github.com/iolo/apple2-image-editor#readme",
+  "devDependencies": {
+    "playwright-core": "^1.57.0"
+  }
+}
