@@ -38,6 +38,7 @@ const elements = {
   dimensionForm: document.getElementById("dimensionForm"),
   dimWidth: document.getElementById("dimWidth"),
   dimHeight: document.getElementById("dimHeight"),
+  gridToggle: document.getElementById("gridToggle"),
   toolButtons: document.getElementById("toolButtons"),
 };
 

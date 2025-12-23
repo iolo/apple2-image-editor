@@ -14,7 +14,17 @@ Simple image editor for Apple II lo-res, double lo-res, hi-res, and double hi-re
 - `style.css`: layout and visual design.
 - `app.js`: UI wiring, state, rendering, and interactions.
 - `image-tools.js`: drawing helpers (line, rectangle, flood fill).
-- `apple2-modes.js`: Apple II mode definitions, palette handling, and encode/decode logic.
+- `apple2-modes.js`: barrel that exports Apple II mode helpers and handlers.
+- `apple2-common.js`: shared palettes, mode metadata, and file detection utilities.
+- `apple2-gr.js`: lo-res mode handler.
+- `apple2-dgr.js`: double lo-res mode handler.
+- `apple2-hgr.js`: hi-res mode handler.
+- `apple2-dhgr.js`: double hi-res mode handler.
+- `pixmap.js`: generic pixmap handler.
+- `bitmap.js`: generic bitmap handler.
+
+## Testing
+- E2E: `PLAYWRIGHT_CHROMIUM_PATH=/usr/bin/google-chrome node e2e-test.mjs` (or `npm run test:e2e`).
 
 ---
 May the **SOURCE** be with you...
