@@ -23,8 +23,8 @@ export {
 };
 
 export const modeHandlers = {
-  lores: loresHandler,
-  dlores: dloresHandler,
+  gr: loresHandler,
+  dgr: dloresHandler,
   hgrColor: hgrColorHandler,
   hgrMono: hgrMonoHandler,
   dhgrColor: dhgrColorHandler,

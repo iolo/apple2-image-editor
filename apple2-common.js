@@ -20,19 +20,19 @@ export const paletteDhgrColor = [
 ];
 
 export const modes = {
-  lores: { id: "lores", name: "Lo-Res", width: 40, height: 48, ext: "GR", palette: paletteLores },
-  dlores: { id: "dlores", name: "Double Lo-Res", width: 80, height: 48, ext: "DGR", palette: paletteLores },
-  hgrColor: { id: "hgrColor", name: "Hi-Res Color", width: 140, height: 192, ext: "HGR", palette: paletteHgr },
-  hgrMono: { id: "hgrMono", name: "Hi-Res Mono", width: 280, height: 192, ext: "HGR", palette: paletteHgrMono },
-  dhgrColor: { id: "dhgrColor", name: "Double Hi-Res Color", width: 140, height: 192, ext: "DHGR", palette: paletteDhgrColor },
-  dhgrMono: { id: "dhgrMono", name: "Double Hi-Res Mono", width: 560, height: 192, ext: "DHGR", palette: paletteDhgrMono },
-  pixmap: { id: "pixmap", name: "Pixmap", ext: "PIXMAP", palette: null },
-  bitmap: { id: "bitmap", name: "Bitmap", ext: "BITMAP", palette: paletteBitmap },
+  gr: { id: "gr", name: "Lo-Res", width: 40, height: 48, ext: "GR", palette: paletteLores, xscale: 2 },
+  dgr: { id: "dgr", name: "Double Lo-Res", width: 80, height: 48, ext: "DGR", palette: paletteLores, xscale: 1 },
+  hgrColor: { id: "hgrColor", name: "Hi-Res Color", width: 140, height: 192, ext: "HGR", palette: paletteHgr, xscale: 2 },
+  hgrMono: { id: "hgrMono", name: "Hi-Res Mono", width: 280, height: 192, ext: "HGR", palette: paletteHgrMono, xscale: 1 },
+  dhgrColor: { id: "dhgrColor", name: "Double Hi-Res Color", width: 140, height: 192, ext: "DHGR", palette: paletteDhgrColor, xscale: 2 },
+  dhgrMono: { id: "dhgrMono", name: "Double Hi-Res Mono", width: 560, height: 192, ext: "DHGR", palette: paletteDhgrMono, xscale: 1 },
+  pixmap: { id: "pixmap", name: "Pixmap", ext: "PIXMAP", palette: null, xscale: 1 },
+  bitmap: { id: "bitmap", name: "Bitmap", ext: "BITMAP", palette: paletteBitmap, xscale: 1 },
 };
 
 const sizeSignatures = {
-  0x400: "lores",
-  0x800: "dlores",
+  0x400: "gr",
+  0x800: "dgr",
   0x2000: "hgrColor",
   0x4000: "dhgrColor",
 };

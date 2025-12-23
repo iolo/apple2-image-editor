@@ -18,19 +18,19 @@ const assertRange = (value, min, max, message) => {
 };
 
 const run = () => {
-  const expectedModes = ["lores", "dlores", "hgrColor", "hgrMono", "dhgrColor", "dhgrMono", "pixmap", "bitmap"];
+  const expectedModes = ["gr", "dgr", "hgrColor", "hgrMono", "dhgrColor", "dhgrMono", "pixmap", "bitmap"];
   expectedModes.forEach((id) => {
     assert(modes[id], `Missing mode: ${id}`);
     assert(modeHandlers[id], `Missing mode handler: ${id}`);
   });
 
-  const lores = modeHandlers.lores.create({ width: 40, height: 48 });
-  modeHandlers.lores.setPixel(lores, 0, 0, 3);
-  assert(modeHandlers.lores.getPixel(lores, 0, 0) === 3, "Lo-res pixel mismatch");
+  const gr = modeHandlers.gr.create({ width: 40, height: 48 });
+  modeHandlers.gr.setPixel(gr, 0, 0, 3);
+  assert(modeHandlers.gr.getPixel(gr, 0, 0) === 3, "Lo-res pixel mismatch");
 
-  const dlores = modeHandlers.dlores.create({ width: 80, height: 48 });
-  modeHandlers.dlores.setPixel(dlores, 1, 0, 7);
-  assert(modeHandlers.dlores.getPixel(dlores, 1, 0) === 7, "Double lo-res pixel mismatch");
+  const dgr = modeHandlers.dgr.create({ width: 80, height: 48 });
+  modeHandlers.dgr.setPixel(dgr, 1, 0, 7);
+  assert(modeHandlers.dgr.getPixel(dgr, 1, 0) === 7, "Double lo-res pixel mismatch");
 
   const hgrColor = modeHandlers.hgrColor.create({ width: 140, height: 192 });
   modeHandlers.hgrColor.setPixel(hgrColor, 0, 0, 1);
@@ -60,7 +60,7 @@ const run = () => {
   assert(palette.length === 16, "Pixmap palette length mismatch");
 
   const detected = detectModeFromFile("test.gr", 0x400);
-  assert(detected.id === "lores", "Mode detection mismatch for .GR");
+  assert(detected.id === "gr", "Mode detection mismatch for .GR");
 
   let threw = false;
   try {

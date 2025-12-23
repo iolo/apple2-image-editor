@@ -45,10 +45,10 @@ const elements = {
 };
 
 const state = {
-  mode: modes.lores,
+  mode: modes.gr,
   data: null,
-  width: modes.lores.width,
-  height: modes.lores.height,
+  width: modes.gr.width,
+  height: modes.gr.height,
   fg: 1,
   bg: 0,
   zoom: 8,
@@ -112,6 +112,7 @@ const refreshColorPreview = () => {
 
 const isHgrMode = (modeId) => modeId === "hgrColor" || modeId === "hgrMono";
 const isDhgrMode = (modeId) => modeId === "dhgrColor" || modeId === "dhgrMono";
+const getModeXScale = () => (typeof state.mode.xscale === "number" ? state.mode.xscale : 1);
 
 const updateHgrModeControl = () => {
   if (!elements.hgrModeSelect) return;
@@ -196,8 +197,12 @@ const applyDraw = (x, y, color) => {
 };
 
 const render = () => {
-  canvas.width = state.width * state.zoom;
-  canvas.height = state.height * state.zoom;
+  const xScale = state.zoom * getModeXScale();
+  const yScale = state.zoom;
+  canvas.width = Math.max(1, Math.round(state.width * xScale));
+  canvas.height = Math.max(1, Math.round(state.height * yScale));
+  const displayScaleX = canvas.width / state.width;
+  const displayScaleY = canvas.height / state.height;
 
   const palette = paletteForMode(state.mode);
   const image = ctx.createImageData(state.width, state.height);
@@ -229,17 +234,17 @@ const render = () => {
     ctx.strokeStyle = "rgba(255,255,255,0.08)";
     ctx.lineWidth = 1;
     for (let x = 0; x <= state.width; x += 1) {
-      const px = x * state.zoom + 0.5;
+      const px = x * displayScaleX + 0.5;
       ctx.beginPath();
       ctx.moveTo(px, 0);
-      ctx.lineTo(px, state.height * state.zoom);
+      ctx.lineTo(px, state.height * displayScaleY);
       ctx.stroke();
     }
     for (let y = 0; y <= state.height; y += 1) {
-      const py = y * state.zoom + 0.5;
+      const py = y * displayScaleY + 0.5;
       ctx.beginPath();
       ctx.moveTo(0, py);
-      ctx.lineTo(state.width * state.zoom, py);
+      ctx.lineTo(state.width * displayScaleX, py);
       ctx.stroke();
     }
     ctx.restore();
@@ -249,10 +254,10 @@ const render = () => {
   ctx.strokeStyle = "#4da3ff";
   ctx.lineWidth = Math.max(1, Math.floor(state.zoom / 4));
   ctx.strokeRect(
-    state.caret.x * state.zoom + 0.5,
-    state.caret.y * state.zoom + 0.5,
-    state.zoom - 1,
-    state.zoom - 1,
+    state.caret.x * displayScaleX + 0.5,
+    state.caret.y * displayScaleY + 0.5,
+    displayScaleX - 1,
+    displayScaleY - 1,
   );
   ctx.restore();
 
@@ -479,8 +484,10 @@ const setupCanvasDrawing = () => {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    const x = Math.floor(((ev.clientX - rect.left) * scaleX) / state.zoom);
-    const y = Math.floor(((ev.clientY - rect.top) * scaleY) / state.zoom);
+    const displayScaleX = canvas.width / state.width;
+    const displayScaleY = canvas.height / state.height;
+    const x = Math.floor(((ev.clientX - rect.left) * scaleX) / displayScaleX);
+    const y = Math.floor(((ev.clientY - rect.top) * scaleY) / displayScaleY);
     return { x, y };
   };
 
@@ -637,7 +644,7 @@ const init = () => {
   setupCanvasDrawing();
   handleKeyboard();
   setTool(state.tool);
-  setMode("lores", modes.lores.width, modes.lores.height);
+  setMode("gr", modes.gr.width, modes.gr.height);
 };
 
 init();
