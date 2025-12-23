@@ -1,4 +1,4 @@
-import { loresAddress } from "./apple2-common.js";
+import { loresAddress } from "./apple2-common.mjs";
 
 export const loresHandler = {
   create({ width, height }) {

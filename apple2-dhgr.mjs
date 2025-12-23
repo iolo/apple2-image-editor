@@ -1,4 +1,4 @@
-import { hgrAddress } from "./apple2-common.js";
+import { hgrAddress } from "./apple2-common.mjs";
 
 const dhgrColorFromBits = (mainBit, auxBit, mainPhase, auxPhase, xParity) => {
   const both = mainBit && auxBit;

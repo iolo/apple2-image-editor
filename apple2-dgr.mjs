@@ -1,4 +1,4 @@
-import { loresAddress } from "./apple2-common.js";
+import { loresAddress } from "./apple2-common.mjs";
 
 const auxColorDecode = (value) => ((value & 1) << 3) | (value >> 1);
 const auxColorEncode = (value) => ((value << 1) & 0x0f) | (value >> 3);
