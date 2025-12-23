@@ -44,6 +44,15 @@
             Pixel grid
           </label>
         </div>
+        <div class="tool-row">
+          <label class="inline">
+            Hi-Res mode
+            <select id="hgrModeSelect">
+              <option value="hgrColor">Color (140x192)</option>
+              <option value="hgrMono">Mono (280x192)</option>
+            </select>
+          </label>
+        </div>
         <div class="tool-row color-preview">
           <div>
             <div class="swatch-label">FG</div>
@@ -101,7 +110,8 @@
         <select id="modeSelect" name="mode">
           <option value="lores">Lo-Res (40x48, .GR)</option>
           <option value="dlores">Double Lo-Res (80x48, .DGR)</option>
-          <option value="hgr">Hi-Res (280x192, .HGR)</option>
+          <option value="hgrColor">Hi-Res Color (140x192, .HGR)</option>
+          <option value="hgrMono">Hi-Res Mono (280x192, .HGR)</option>
           <option value="dhgr">Double Hi-Res (560x192, .DHGR)</option>
           <option value="pixmap">Pixmap (custom size, 256 colors, .PIXMAP)</option>
           <option value="bitmap">Bitmap (custom size, 2 colors, .BITMAP)</option>

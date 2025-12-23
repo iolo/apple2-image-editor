@@ -10,11 +10,13 @@ export const paletteHgr = [
 ];
 
 export const paletteBitmap = ["#000000", "#FFFFFF"];
+export const paletteHgrMono = paletteBitmap;
 
 export const modes = {
   lores: { id: "lores", name: "Lo-Res", width: 40, height: 48, ext: "GR", palette: paletteLores },
   dlores: { id: "dlores", name: "Double Lo-Res", width: 80, height: 48, ext: "DGR", palette: paletteLores },
-  hgr: { id: "hgr", name: "Hi-Res", width: 280, height: 192, ext: "HGR", palette: paletteHgr },
+  hgrColor: { id: "hgrColor", name: "Hi-Res Color", width: 140, height: 192, ext: "HGR", palette: paletteHgr },
+  hgrMono: { id: "hgrMono", name: "Hi-Res Mono", width: 280, height: 192, ext: "HGR", palette: paletteHgrMono },
   dhgr: { id: "dhgr", name: "Double Hi-Res", width: 560, height: 192, ext: "DHGR", palette: paletteLores },
   pixmap: { id: "pixmap", name: "Pixmap", ext: "PIXMAP", palette: null },
   bitmap: { id: "bitmap", name: "Bitmap", ext: "BITMAP", palette: paletteBitmap },
@@ -23,7 +25,7 @@ export const modes = {
 const sizeSignatures = {
   0x400: "lores",
   0x800: "dlores",
-  0x2000: "hgr",
+  0x2000: "hgrColor",
   0x4000: "dhgr",
 };
 

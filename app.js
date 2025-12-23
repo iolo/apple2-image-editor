@@ -39,6 +39,7 @@ const elements = {
   dimWidth: document.getElementById("dimWidth"),
   dimHeight: document.getElementById("dimHeight"),
   gridToggle: document.getElementById("gridToggle"),
+  hgrModeSelect: document.getElementById("hgrModeSelect"),
   toolButtons: document.getElementById("toolButtons"),
 };
 
@@ -106,6 +107,17 @@ const refreshColorPreview = () => {
   const palette = paletteForMode(state.mode);
   elements.fgPreview.style.background = palette[state.fg % palette.length] || "#000";
   elements.bgPreview.style.background = palette[state.bg % palette.length] || "#000";
+};
+
+const isHgrMode = (modeId) => modeId === "hgrColor" || modeId === "hgrMono";
+
+const updateHgrModeControl = () => {
+  if (!elements.hgrModeSelect) return;
+  const active = isHgrMode(state.mode.id);
+  elements.hgrModeSelect.disabled = !active;
+  if (active) {
+    elements.hgrModeSelect.value = state.mode.id;
+  }
 };
 
 const updateStatus = () => {
@@ -237,19 +249,28 @@ const render = () => {
   updateStatus();
 };
 
-const setMode = (modeId, width, height) => {
+const setMode = (modeId, width, height, opts = {}) => {
   const mode = modes[modeId];
   if (!mode) return;
-  state.mode = mode;
-  state.width = width || mode.width || state.width;
-  state.height = height || mode.height || state.height;
+  const { preserveData = false } = opts;
   const handler = modeHandlers[modeId];
-  state.data = handler.create({ width: state.width, height: state.height });
-  state.undo = [];
-  state.redo = [];
-  state.fg = 1;
-  state.bg = 0;
+  const nextWidth = width || mode.width || state.width;
+  const nextHeight = height || mode.height || state.height;
+  const keepData = preserveData && state.data && handler;
+  state.mode = mode;
+  state.width = nextWidth;
+  state.height = nextHeight;
+  if (!keepData) {
+    state.data = handler.create({ width: state.width, height: state.height });
+    state.undo = [];
+    state.redo = [];
+    state.fg = 1;
+    state.bg = 0;
+  }
+  state.caret.x = clamp(state.caret.x, 0, state.width - 1);
+  state.caret.y = clamp(state.caret.y, 0, state.height - 1);
   updatePaletteGrid();
+  updateHgrModeControl();
   render();
 };
 
@@ -320,6 +341,7 @@ const handleFileOpen = async (file) => {
     state.undo = [];
     state.redo = [];
     updatePaletteGrid();
+    updateHgrModeControl();
     render();
   } catch (err) {
     if (err && err.message !== "cancelled") {
@@ -368,6 +390,14 @@ const setupToolbar = () => {
     state.showGrid = ev.target.checked;
     render();
   });
+
+  if (elements.hgrModeSelect) {
+    elements.hgrModeSelect.addEventListener("change", (ev) => {
+      const nextMode = ev.target.value;
+      if (!isHgrMode(nextMode)) return;
+      setMode(nextMode, modes[nextMode].width, modes[nextMode].height, { preserveData: true });
+    });
+  }
 
   if (elements.toolButtons) {
     elements.toolButtons.querySelectorAll("[data-tool]").forEach((btn) => {

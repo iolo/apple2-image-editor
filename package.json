@@ -2,6 +2,7 @@
   "name": "apple2-image-editor",
   "version": "1.0.0",
   "description": "Simple image editor for Apple II lo-res, double lo-res, hi-res, and double hi-res graphics. No build step, no server—open `index.html` in a modern browser.",
+  "type": "module",
   "main": "app.js",
   "scripts": {
     "test": "node smoke-check.mjs",

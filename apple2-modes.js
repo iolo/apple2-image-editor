@@ -9,7 +9,7 @@ import {
 } from "./apple2-common.js";
 import { dhgrHandler } from "./apple2-dhgr.js";
 import { dloresHandler } from "./apple2-dgr.js";
-import { hgrHandler } from "./apple2-hgr.js";
+import { hgrColorHandler, hgrMonoHandler } from "./apple2-hgr.js";
 import { loresHandler } from "./apple2-gr.js";
 import { pixmapHandler } from "./pixmap.js";
 
@@ -25,7 +25,8 @@ export {
 export const modeHandlers = {
   lores: loresHandler,
   dlores: dloresHandler,
-  hgr: hgrHandler,
+  hgrColor: hgrColorHandler,
+  hgrMono: hgrMonoHandler,
   dhgr: dhgrHandler,
   pixmap: pixmapHandler,
   bitmap: bitmapHandler,

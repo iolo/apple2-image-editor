@@ -4,8 +4,8 @@ This document describes how the editor stores, loads, and renders Apple II hi-re
 
 ## Summary
 
-- Resolution: 280 x 192
-- Colors: 6 (black, white, purple, green, orange, blue)
+- Hi-Res Color (HGR color): 140 x 192, 6 colors (black, white, purple, green, orange, blue)
+- Hi-Res Mono (HGR mono): 280 x 192, 2 colors (black, white)
 - File extension: `.HGR`
 - File size: 0x2000 bytes (8 KB)
 - Storage: main memory only
@@ -58,7 +58,15 @@ Real HGR color is a composite artifact. The editor uses a simplified mapping:
 
 The editor uses this mapping in `apple2-hgr.js` for decoding and a reverse best-fit when setting pixels.
 
+## Editor Modes
+
+The editor exposes two HGR modes that share the same 0x2000-byte framebuffer:
+
+- Hi-Res Color (140x192): Renders each pair of HGR pixels as a single color pixel.
+- Hi-Res Mono (280x192): Renders each HGR bit as black or white.
+
+Switching between these modes is purely representational; the underlying buffer and `.HGR` file format are unchanged.
+
 ## File Format
 
 The `.HGR` file is a raw dump of 0x2000 bytes with the layout above. There is no header.
-
