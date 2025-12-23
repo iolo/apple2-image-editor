@@ -45,8 +45,9 @@ export const dhgrHandler = {
     };
   },
   getPixel(data, x, y) {
-    const offset = hgrAddress(x, y);
-    const mask = 1 << (x % 7);
+    const column = x >> 1;
+    const offset = hgrAddress(column, y);
+    const mask = 1 << (column % 7);
     const mainByte = data.main[offset] || 0;
     const auxByte = data.aux[offset] || 0;
     const mainBit = (mainByte & mask) ? 1 : 0;
@@ -76,8 +77,9 @@ export const dhgrHandler = {
         }
       }
     }
-    const offset = hgrAddress(x, y);
-    const mask = 1 << (x % 7);
+    const column = x >> 1;
+    const offset = hgrAddress(column, y);
+    const mask = 1 << (column % 7);
     const mainByte = data.main[offset] || 0;
     const auxByte = data.aux[offset] || 0;
     data.main[offset] = (mainByte & ~mask) | (best.mainBit ? mask : 0);
