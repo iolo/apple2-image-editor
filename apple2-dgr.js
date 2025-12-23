@@ -1,5 +1,8 @@
 import { loresAddress } from "./apple2-common.js";
 
+const auxColorDecode = (value) => ((value & 1) << 3) | (value >> 1);
+const auxColorEncode = (value) => ((value << 1) & 0x0f) | (value >> 3);
+
 export const dloresHandler = {
   create({ width, height }) {
     return {
@@ -23,7 +26,8 @@ export const dloresHandler = {
     const row24 = y >> 1;
     const offset = loresAddress(column, row24);
     const byte = bank[offset] || 0;
-    return (y & 1) ? (byte >> 4) & 0x0f : byte & 0x0f;
+    const color = (y & 1) ? (byte >> 4) & 0x0f : byte & 0x0f;
+    return (x & 1) ? auxColorDecode(color) : color;
   },
   setPixel(data, x, y, color) {
     const bank = (x & 1) ? data.aux : data.main;
@@ -31,10 +35,11 @@ export const dloresHandler = {
     const row24 = y >> 1;
     const offset = loresAddress(column, row24);
     const original = bank[offset] || 0;
+    const stored = (x & 1) ? auxColorEncode(color & 0x0f) : (color & 0x0f);
     if (y & 1) {
-      bank[offset] = (original & 0x0f) | ((color & 0x0f) << 4);
+      bank[offset] = (original & 0x0f) | (stored << 4);
     } else {
-      bank[offset] = (original & 0xf0) | (color & 0x0f);
+      bank[offset] = (original & 0xf0) | stored;
     }
   },
   toFile(data) {
