@@ -1,18 +1,18 @@
-# Apple II Hi-Res (HGR) Technical Notes
+# Apple II HGR (Hi-Res) Technical Notes
 
-This document describes how the editor stores, loads, and renders Apple II hi-res (HGR) graphics.
+This document describes how the editor stores, loads, and renders Apple II HGR (Hi-Res) graphics.
 
 ## Summary
 
-- Hi-Res Color (HGR color): 140 x 192, 6 colors (black, white, purple, green, orange, blue)
-- Hi-Res Mono (HGR mono): 280 x 192, 2 colors (black, white)
+- HGR Color (Hi-Res color): 140 x 192, 6 colors (black, white, purple, green, orange, blue)
+- HGR Mono (Hi-Res mono): 280 x 192, 2 colors (black, white)
 - File extension: `.HGR`
 - File size: 0x2000 bytes (8 KB)
 - Storage: main memory only
 
 ## Memory Layout
 
-HGR uses a non-linear address scheme. Each scanline is split into 8-line groups and scattered across three 0x28-byte sections.
+HGR (Hi-Res) uses a non-linear address scheme. Each scanline is split into 8-line groups and scattered across three 0x28-byte sections.
 
 - Base page: 0x2000
 - Each line uses 40 bytes (280 pixels / 7 pixels per byte)
@@ -60,10 +60,10 @@ The editor uses this mapping in `apple2-hgr.js` for decoding and a reverse best-
 
 ## Editor Modes
 
-The editor exposes two HGR modes that share the same 0x2000-byte framebuffer:
+The editor exposes two HGR (Hi-Res) modes that share the same 0x2000-byte framebuffer:
 
-- Hi-Res Color (140x192): Renders each pair of HGR pixels as a single color pixel.
-- Hi-Res Mono (280x192): Renders each HGR bit as black or white.
+- HGR Color (140x192): Renders each pair of HGR pixels as a single color pixel.
+- HGR Mono (280x192): Renders each HGR bit as black or white.
 
 Switching between these modes is purely representational; the underlying buffer and `.HGR` file format are unchanged.
 

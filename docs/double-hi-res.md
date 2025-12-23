@@ -1,18 +1,18 @@
-# Apple II Double Hi-Res (DHGR) Technical Notes
+# Apple II DHGR (Double Hi-Res) Technical Notes
 
-This document describes how the editor stores, loads, and renders Apple II double hi-res (DHGR) graphics.
+This document describes how the editor stores, loads, and renders Apple II DHGR (Double Hi-Res) graphics.
 
 ## Summary
 
-- Double Hi-Res Color (DHGR color): 140 x 192, 16 colors (lo-res palette)
-- Double Hi-Res Mono (DHGR mono): 560 x 192, 2 colors (black, white)
+- DHGR Color (Double Hi-Res color): 140 x 192, 16 colors (lo-res palette)
+- DHGR Mono (Double Hi-Res mono): 560 x 192, 2 colors (black, white)
 - File extension: `.DHGR`
 - File size: 0x4000 bytes (16 KB)
 - Storage: main + auxiliary memory (0x2000 each)
 
 ## Memory Layout
 
-DHGR uses the same interleaved HGR address scheme, but the pixel stream is split between main and auxiliary memory.
+DHGR (Double Hi-Res) uses the same interleaved HGR address scheme, but the pixel stream is split between main and auxiliary memory.
 
 - Main bank: 0x2000 bytes
 - Aux bank: 0x2000 bytes
@@ -73,9 +73,9 @@ The `.DHGR` file is a raw dump of both banks (main first, aux second). There is 
 
 ## Editor Modes
 
-The editor exposes two DHGR modes that share the same 0x4000-byte framebuffer:
+The editor exposes two DHGR (Double Hi-Res) modes that share the same 0x4000-byte framebuffer:
 
-- Double Hi-Res Color (140x192): Renders each group of 4 DHGR bits as a 4-bit color index (0..15) without artifact blending.
-- Double Hi-Res Mono (560x192): Renders any set bit as white on black.
+- DHGR Color (140x192): Renders each group of 4 DHGR bits as a 4-bit color index (0..15) without artifact blending.
+- DHGR Mono (560x192): Renders any set bit as white on black.
 
 Switching between these modes is purely representational; the underlying buffer and `.DHGR` file format are unchanged.

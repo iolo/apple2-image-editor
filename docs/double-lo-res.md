@@ -1,6 +1,6 @@
-# Apple II Double Lo-Res (DGR) Technical Notes
+# Apple II DGR (Double Lo-Res) Technical Notes
 
-This document describes how the editor stores, loads, and renders Apple II double lo-res (DGR) graphics.
+This document describes how the editor stores, loads, and renders Apple II DGR (Double Lo-Res) graphics.
 
 ## Summary
 
@@ -12,7 +12,7 @@ This document describes how the editor stores, loads, and renders Apple II doubl
 
 ## Memory Layout
 
-Double lo-res uses the same lo-res addressing, but columns are split between main and auxiliary memory.
+DGR (Double Lo-Res) uses the same lo-res addressing, but columns are split between main and auxiliary memory.
 
 - Main bank: 0x400 bytes
 - Aux bank: 0x400 bytes
@@ -49,7 +49,7 @@ color = (y & 1) ? (byte >> 4) & 0x0f : byte & 0x0f
 
 ## Color Mapping Difference (Main vs Aux)
 
-Double lo-res uses different color decoding for main and aux columns. The 4-bit color index is remapped when the pixel comes from the aux bank.
+DGR (Double Lo-Res) uses different color decoding for main and aux columns. The 4-bit color index is remapped when the pixel comes from the aux bank.
 
 Aux color remap (index -> displayed color):
 

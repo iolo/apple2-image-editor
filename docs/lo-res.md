@@ -1,6 +1,6 @@
-# Apple II Lo-Res (GR) Technical Notes
+# Apple II GR (Lo-Res) Technical Notes
 
-This document describes how the editor stores, loads, and renders Apple II lo-res (GR) graphics.
+This document describes how the editor stores, loads, and renders Apple II GR (Lo-Res) graphics.
 
 ## Summary
 
@@ -12,7 +12,7 @@ This document describes how the editor stores, loads, and renders Apple II lo-re
 
 ## Memory Layout
 
-Lo-res uses the same interleaved addressing pattern as text mode, with 24 rows of memory and two vertical pixels per byte.
+GR (Lo-Res) uses the same interleaved addressing pattern as text mode, with 24 rows of memory and two vertical pixels per byte.
 
 - Base page: 0x400
 - Each row uses 40 bytes (40 columns)

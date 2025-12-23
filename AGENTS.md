@@ -1,6 +1,6 @@
 # apple2-image-editor
 
-simple image editor for Apple II lo-res, double lo-res, hi-res and double hi-res graphics modes
+simple image editor for Apple II GR (Lo-Res), DGR (Double Lo-Res), HGR (Hi-Res) and DHGR (Double Hi-Res) graphics modes
 
 
 # tech stack
@@ -21,7 +21,7 @@ simple image editor for Apple II lo-res, double lo-res, hi-res and double hi-res
 
 # features
 
-- create and edit images for Apple II lo-res, double lo-res, hi-res and double hi-res graphics modes
+- create and edit images for Apple II GR (Lo-Res), DGR (Double Lo-Res), HGR (Hi-Res) and DHGR (Double Hi-Res) graphics modes
 - TODO: compress and decompress images using lz4, lzsa, zx02
 
 
@@ -69,7 +69,7 @@ simple image editor for Apple II lo-res, double lo-res, hi-res and double hi-res
 - color palette: html elements with css
   - colors for each mode: click to select foreground color, right click to select background color
   - selected foreground/background colors
-  - presets for Apple II lo-res, double lo-res, hi-res, double hi-res
+  - presets for Apple II GR (Lo-Res), DGR (Double Lo-Res), HGR (Hi-Res), DHGR (Double Hi-Res)
 
 ## layout example
 ```
@@ -91,16 +91,16 @@ simple image editor for Apple II lo-res, double lo-res, hi-res and double hi-res
 
 - `Uint8Array` for pixel data storage
 - supported image formats:
-  - lo-res: 40x48 pixels, 16 colors
+  - GR (Lo-Res): 40x48 pixels, 16 colors
     - start address 0x400, length 0x400
     - file extension: `.GR`
-  - double lo-res: 80x48 pixels, 16 colors
+  - DGR (Double Lo-Res): 80x48 pixels, 16 colors
     - start address 0x400, length 0x800
     - file extension: `.DGR`
-  - hi-res 280x192 pixels, 6 colors
+  - HGR (Hi-Res): 280x192 pixels, 6 colors
     - start address 0x2000, length 0x2000
     - file extension: `.HGR`
-  - double hi-res 560x192 pixels, 16 colors
+  - DHGR (Double Hi-Res): 560x192 pixels, 16 colors
     - start address 0x2000, length 0x4000(0x2000 for main memory + 0x2000 for aux memory)
     - file extension: `.DHGR`
   - generic pixmap
