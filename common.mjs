@@ -26,7 +26,7 @@ export const modes = {
   hgrMono: { id: "hgrMono", name: "Hi-Res Mono", width: 280, height: 192, ext: "HGR", palette: paletteHgrMono, xscale: 1 },
   dhgrColor: { id: "dhgrColor", name: "Double Hi-Res Color", width: 140, height: 192, ext: "DHGR", palette: paletteDhgrColor, xscale: 2 },
   dhgrMono: { id: "dhgrMono", name: "Double Hi-Res Mono", width: 560, height: 192, ext: "DHGR", palette: paletteDhgrMono, xscale: 1 },
-  pixmap: { id: "pixmap", name: "Pixmap", ext: "PIXMAP", palette: null, xscale: 1 },
+  pixmap: { id: "pixmap", name: "Pixmap", ext: "PIXMAP", palette: paletteLores, xscale: 1 },
   bitmap: { id: "bitmap", name: "Bitmap", ext: "BITMAP", palette: paletteBitmap, xscale: 1 },
 };
 
@@ -57,11 +57,7 @@ export const colorStringToRGBA = (hex) => {
 };
 
 export const paletteForMode = (mode) => {
-  if (mode.palette) return mode.palette;
-  if (mode.id === "pixmap") {
-    return Array.from({ length: 16 }, (_, i) => `hsl(${(i * 23) % 360}deg 80% 60%)`);
-  }
-  return paletteBitmap;
+  return mode.palette;
 };
 
 const bestSquareFactors = (n) => {
