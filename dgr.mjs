@@ -1,9 +1,9 @@
-import { loresAddress } from "./apple2-common.mjs";
+import { grAddress } from "./common.mjs";
 
 const auxColorDecode = (value) => ((value & 1) << 3) | (value >> 1);
 const auxColorEncode = (value) => ((value << 1) & 0x0f) | (value >> 3);
 
-export const dloresHandler = {
+export const dgrHandler = {
   create({ width, height }) {
     return {
       main: new Uint8Array(0x400),
@@ -24,7 +24,7 @@ export const dloresHandler = {
     const bank = (x & 1) ? data.aux : data.main;
     const column = x >> 1;
     const row24 = y >> 1;
-    const offset = loresAddress(column, row24);
+    const offset = grAddress(column, row24);
     const byte = bank[offset] || 0;
     const color = (y & 1) ? (byte >> 4) & 0x0f : byte & 0x0f;
     return (x & 1) ? auxColorDecode(color) : color;
@@ -33,7 +33,7 @@ export const dloresHandler = {
     const bank = (x & 1) ? data.aux : data.main;
     const column = x >> 1;
     const row24 = y >> 1;
-    const offset = loresAddress(column, row24);
+    const offset = grAddress(column, row24);
     const original = bank[offset] || 0;
     const stored = (x & 1) ? auxColorEncode(color & 0x0f) : (color & 0x0f);
     if (y & 1) {

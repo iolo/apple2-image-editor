@@ -1,6 +1,6 @@
-import { loresAddress } from "./apple2-common.mjs";
+import { grAddress } from "./common.mjs";
 
-export const loresHandler = {
+export const grHandler = {
   create({ width, height }) {
     return { memory: new Uint8Array(0x400), width, height };
   },
@@ -9,13 +9,13 @@ export const loresHandler = {
   },
   getPixel(data, x, y) {
     const row24 = y >> 1;
-    const offset = loresAddress(x, row24);
+    const offset = grAddress(x, row24);
     const value = data.memory[offset] || 0;
     return (y & 1) ? (value >> 4) & 0x0f : value & 0x0f;
   },
   setPixel(data, x, y, color) {
     const row24 = y >> 1;
-    const offset = loresAddress(x, row24);
+    const offset = grAddress(x, row24);
     const original = data.memory[offset] || 0;
     if (y & 1) {
       data.memory[offset] = (original & 0x0f) | ((color & 0x0f) << 4);

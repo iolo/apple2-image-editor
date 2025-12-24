@@ -4,7 +4,7 @@ import {
   modeHandlers,
   modes,
   paletteForMode,
-} from "./apple2-modes.mjs";
+} from "./modes.mjs";
 
 const assert = (condition, message) => {
   if (!condition) {

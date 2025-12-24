@@ -6,8 +6,8 @@ import {
   modeHandlers,
   modes,
   paletteForMode,
-} from "./apple2-modes.mjs";
-import { drawLine, drawRect, floodFill } from "./image-tools.mjs";
+} from "./modes.mjs";
+import { drawLine, drawRect, floodFill } from "./tools.mjs";
 
 const canvas = document.getElementById("drawingCanvas");
 const ctx = canvas.getContext("2d");

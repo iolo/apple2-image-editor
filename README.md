@@ -13,13 +13,13 @@ Simple image editor for Apple II GR (Lo-Res), DGR (Double Lo-Res), HGR (Hi-Res),
 - `index.html`: UI layout and dialogs.
 - `style.css`: layout and visual design.
 - `app.js`: UI wiring, state, rendering, and interactions.
-- `image-tools.js`: drawing helpers (line, rectangle, flood fill).
-- `apple2-modes.js`: barrel that exports Apple II mode helpers and handlers.
-- `apple2-common.js`: shared palettes, mode metadata, and file detection utilities.
-- `apple2-gr.js`: GR (Lo-Res) mode handler.
-- `apple2-dgr.js`: DGR (Double Lo-Res) mode handler.
-- `apple2-hgr.js`: HGR (Hi-Res) mode handler.
-- `apple2-dhgr.js`: DHGR (Double Hi-Res) mode handler.
+- `tools.js`: drawing helpers (line, rectangle, flood fill).
+- `modes.js`: barrel that exports Apple II mode helpers and handlers.
+- `common.js`: shared palettes, mode metadata, and file detection utilities.
+- `gr.js`: GR (Lo-Res) mode handler.
+- `dgr.js`: DGR (Double Lo-Res) mode handler.
+- `hgr.js`: HGR (Hi-Res) mode handler.
+- `dhgr.js`: DHGR (Double Hi-Res) mode handler.
 - `pixmap.js`: generic pixmap handler.
 - `bitmap.js`: generic bitmap handler.
 

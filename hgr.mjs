@@ -1,4 +1,4 @@
-import { hgrAddress } from "./apple2-common.mjs";
+import { hgrAddress } from "./common.mjs";
 
 const hgrColorFromBit = (phase, parity) => {
   if (phase === 0) {

@@ -1,30 +1,15 @@
 import { bitmapHandler } from "./bitmap.mjs";
-import {
-  clamp,
-  colorStringToRGBA,
-  detectModeFromFile,
-  inferDimensions,
-  modes,
-  paletteForMode,
-} from "./apple2-common.mjs";
-import { dhgrColorHandler, dhgrMonoHandler } from "./apple2-dhgr.mjs";
-import { dloresHandler } from "./apple2-dgr.mjs";
-import { hgrColorHandler, hgrMonoHandler } from "./apple2-hgr.mjs";
-import { loresHandler } from "./apple2-gr.mjs";
+import { dgrHandler } from "./dgr.mjs";
+import { dhgrColorHandler, dhgrMonoHandler } from "./dhgr.mjs";
+import { grHandler } from "./gr.mjs";
+import { hgrColorHandler, hgrMonoHandler } from "./hgr.mjs";
 import { pixmapHandler } from "./pixmap.mjs";
 
-export {
-  clamp,
-  colorStringToRGBA,
-  detectModeFromFile,
-  inferDimensions,
-  modes,
-  paletteForMode,
-};
+export * from "./common.mjs";
 
 export const modeHandlers = {
-  gr: loresHandler,
-  dgr: dloresHandler,
+  gr: grHandler,
+  dgr: dgrHandler,
   hgrColor: hgrColorHandler,
   hgrMono: hgrMonoHandler,
   dhgrColor: dhgrColorHandler,

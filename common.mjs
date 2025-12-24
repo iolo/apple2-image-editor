@@ -37,7 +37,7 @@ const sizeSignatures = {
   0x4000: "dhgrColor",
 };
 
-export const loresAddress = (x, row) => (row & 0x07) * 0x80 + (row >> 3) * 0x28 + x;
+export const grAddress = (x, row) => (row & 0x07) * 0x80 + (row >> 3) * 0x28 + x;
 
 export const hgrAddress = (x, y) => {
   const byteX = Math.floor(x / 7);
