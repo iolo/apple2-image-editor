@@ -1,21 +1,5 @@
 import { hgrAddress } from "./common.mjs";
 
-const dhgrColorFromBits = (mainBit, auxBit, mainPhase, auxPhase, xParity) => {
-  const both = mainBit && auxBit;
-  const none = !mainBit && !auxBit;
-  if (none) return 0; // black
-  if (both) {
-    const idx = (xParity ? 1 : 0) | ((mainPhase || auxPhase) ? 2 : 0);
-    return [10, 11, 14, 15][idx];
-  }
-  if (mainBit) {
-    const idx = (xParity ? 1 : 0) | (mainPhase ? 2 : 0);
-    return [3, 12, 9, 6][idx]; // purple/green/orange/blue
-  }
-  const idx = (xParity ? 1 : 0) | (auxPhase ? 2 : 0);
-  return [1, 4, 8, 7][idx]; // red/dark green/brown/light blue
-};
-
 export const dhgrHandler = {
   create({ width, height }) {
     return {
@@ -32,49 +16,6 @@ export const dhgrHandler = {
       width: data.width,
       height: data.height,
     };
-  },
-  getPixel(data, x, y) {
-    const column = x >> 1;
-    const offset = hgrAddress(column, y);
-    const mask = 1 << (column % 7);
-    const mainByte = data.main[offset] || 0;
-    const auxByte = data.aux[offset] || 0;
-    const mainBit = (mainByte & mask) ? 1 : 0;
-    const auxBit = (auxByte & mask) ? 1 : 0;
-    const mainPhase = (mainByte & 0x80) ? 1 : 0;
-    const auxPhase = (auxByte & 0x80) ? 1 : 0;
-    const parity = x & 1;
-    return dhgrColorFromBits(mainBit, auxBit, mainPhase, auxPhase, parity);
-  },
-  setPixel(data, x, y, color) {
-    const palette = paletteLores;
-    const targetColor = palette[color % palette.length] || palette[0];
-    const targetRGB = colorStringToRGBA(targetColor);
-    const parity = x & 1;
-    let best = null;
-    for (let mainBit = 0; mainBit <= 1; mainBit += 1) {
-      for (let auxBit = 0; auxBit <= 1; auxBit += 1) {
-        for (let mainPhase = 0; mainPhase <= 1; mainPhase += 1) {
-          for (let auxPhase = 0; auxPhase <= 1; auxPhase += 1) {
-            const cIdx = dhgrColorFromBits(mainBit, auxBit, mainPhase, auxPhase, parity);
-            const candRGB = paletteLoresRGB[cIdx];
-            const dist = colorDistanceSq(targetRGB, candRGB);
-            if (!best || dist < best.dist) {
-              best = { dist, mainBit, auxBit, mainPhase, auxPhase };
-            }
-          }
-        }
-      }
-    }
-    const column = x >> 1;
-    const offset = hgrAddress(column, y);
-    const mask = 1 << (column % 7);
-    const mainByte = data.main[offset] || 0;
-    const auxByte = data.aux[offset] || 0;
-    data.main[offset] = (mainByte & ~mask) | (best.mainBit ? mask : 0);
-    data.aux[offset] = (auxByte & ~mask) | (best.auxBit ? mask : 0);
-    data.main[offset] = best.mainPhase ? (data.main[offset] | 0x80) : (data.main[offset] & 0x7f);
-    data.aux[offset] = best.auxPhase ? (data.aux[offset] | 0x80) : (data.aux[offset] & 0x7f);
   },
   toFile(data) {
     const out = new Uint8Array(0x4000);
