@@ -47,16 +47,26 @@ bit = (byte >> (x % 7)) & 1
 
 Real HGR color is a composite artifact. The editor uses a simplified mapping:
 
-- bit = 0 -> black
-- bit = 1 -> white, or a color based on phase and column parity:
-  - phase 0:
-    - even column: purple
-    - odd column: green
-  - phase 1:
-    - even column: blue
-    - odd column: orange
+- 2 bytes represent 7 pixels.
+- Each pixel is consist of 3 bits(2 bits + 1 shared MSB for palette).
+- 3 bits determine the color of each pixel.
+- Mono mode ignores color and renders any set bit as white.
 
-The editor uses this mapping in `apple2-hgr.js` for decoding and a reverse best-fit when setting pixels.
+|------------|--------------|--------------|-----|
+|address     | $2000        | $2001        | ... |
+|------------|--------------|--------------|-----|
+|bit offset  | 7 6 54 32 10 | 7 65 43 21 0 | ... |
+|pixel       | P D CC BB AA | P GG FF EE D | ... |
+|pixel offset| 2 1 01 01 01 | 2 01 01 01 0 | ... |
+|------------|--------------|--------------|-----|
+
+- Pixel A: bit1 of $2000, bit0 of $2000, bit7 of $2000
+- Pixel B: bit3 of $2000, bit2 of $2000, bit7 of $2000
+- Pixel C: bit5 of $2000, bit4 of $2000, bit7 of $2000
+- Pixel D: bit0 of $2001, bit6 of $2000, bit7 of $2001
+- Pixel E: bit2 of $2001, bit1 of $2001, bit7 of $2001
+- Pixel F: bit4 of $2001, bit3 of $2001, bit7 of $2001
+- Pixel G: bit6 of $2001, bit5 of $2001, bit7 of $2001
 
 ## Editor Modes
 
