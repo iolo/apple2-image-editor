@@ -4,6 +4,8 @@ import {
   modeHandlers,
   modes,
   paletteForMode,
+  paletteToRGBA,
+  rgbaToKey,
 } from "./modes.mjs";
 
 const assert = (condition, message) => {
@@ -17,6 +19,61 @@ const assertRange = (value, min, max, message) => {
   assert(value >= min && value <= max, message);
 };
 
+const fillBuffer = (width, height, rgba) => {
+  const pixels = new Uint8ClampedArray(width * height * 4);
+  for (let i = 0; i < pixels.length; i += 4) {
+    pixels[i] = rgba[0];
+    pixels[i + 1] = rgba[1];
+    pixels[i + 2] = rgba[2];
+    pixels[i + 3] = rgba[3];
+  }
+  return pixels;
+};
+
+const setPixel = (pixels, width, x, y, rgba) => {
+  const offset = (y * width + x) * 4;
+  pixels[offset] = rgba[0];
+  pixels[offset + 1] = rgba[1];
+  pixels[offset + 2] = rgba[2];
+  pixels[offset + 3] = rgba[3];
+};
+
+const getPixelKey = (pixels, width, x, y) => {
+  const offset = (y * width + x) * 4;
+  return rgbaToKey(
+    pixels[offset],
+    pixels[offset + 1],
+    pixels[offset + 2],
+    pixels[offset + 3],
+  );
+};
+
+const roundTripMode = (id, sampleIndex = 1, sizeOverride = null) => {
+  const mode = modes[id];
+  const handler = modeHandlers[id];
+  assert(handler?.encode && handler?.decode, `Handler ${id} missing encode/decode`);
+  const palette = paletteForMode(mode);
+  const rgba = paletteToRGBA(palette);
+  const width = sizeOverride?.width || mode.width;
+  const height = sizeOverride?.height || mode.height;
+  assert(width && height, `Mode ${id} missing dimensions`);
+  const bg = rgba[0];
+  const fg = rgba[sampleIndex % rgba.length];
+  const pixels = fillBuffer(width, height, bg);
+  setPixel(pixels, width, 0, 0, fg);
+  const encoded = handler.encode(pixels, { width, height, palette });
+  const decoded = handler.decode(encoded, { width, height, palette });
+  assert(decoded.length === pixels.length, `${id} decoded size mismatch`);
+  assert(
+    getPixelKey(decoded, width, 0, 0) === rgbaToKey(fg[0], fg[1], fg[2], fg[3]),
+    `${id} round-trip pixel mismatch`,
+  );
+  assert(
+    getPixelKey(decoded, width, width - 1, height - 1) === rgbaToKey(bg[0], bg[1], bg[2], bg[3]),
+    `${id} background pixel mismatch`,
+  );
+};
+
 const run = () => {
   const expectedModes = ["gr", "dgr", "hgrColor", "hgrMono", "dhgrColor", "dhgrMono", "pixmap", "bitmap"];
   expectedModes.forEach((id) => {
@@ -24,37 +81,14 @@ const run = () => {
     assert(modeHandlers[id], `Missing mode handler: ${id}`);
   });
 
-  const gr = modeHandlers.gr.create({ width: 40, height: 48 });
-  modeHandlers.gr.setPixel(gr, 0, 0, 3);
-  assert(modeHandlers.gr.getPixel(gr, 0, 0) === 3, "Lo-res pixel mismatch");
-
-  const dgr = modeHandlers.dgr.create({ width: 80, height: 48 });
-  modeHandlers.dgr.setPixel(dgr, 1, 0, 7);
-  assert(modeHandlers.dgr.getPixel(dgr, 1, 0) === 7, "Double lo-res pixel mismatch");
-
-  const hgrColor = modeHandlers.hgrColor.create({ width: 140, height: 192 });
-  modeHandlers.hgrColor.setPixel(hgrColor, 0, 0, 1);
-  assert(modeHandlers.hgrColor.getPixel(hgrColor, 0, 0) === 1, "Hi-res color pixel mismatch");
-
-  const hgrMono = modeHandlers.hgrMono.create({ width: 280, height: 192 });
-  modeHandlers.hgrMono.setPixel(hgrMono, 0, 0, 1);
-  assert(modeHandlers.hgrMono.getPixel(hgrMono, 0, 0) === 1, "Hi-res mono pixel mismatch");
-
-  const dhgrColor = modeHandlers.dhgrColor.create({ width: 140, height: 192 });
-  modeHandlers.dhgrColor.setPixel(dhgrColor, 0, 0, 1);
-  assertRange(modeHandlers.dhgrColor.getPixel(dhgrColor, 0, 0), 0, 15, "Double hi-res color pixel out of range");
-
-  const dhgrMono = modeHandlers.dhgrMono.create({ width: 560, height: 192 });
-  modeHandlers.dhgrMono.setPixel(dhgrMono, 0, 0, 1);
-  assert(modeHandlers.dhgrMono.getPixel(dhgrMono, 0, 0) === 1, "Double hi-res mono pixel mismatch");
-
-  const pixmap = modeHandlers.pixmap.create({ width: 8, height: 8 });
-  modeHandlers.pixmap.setPixel(pixmap, 2, 3, 200);
-  assert(modeHandlers.pixmap.getPixel(pixmap, 2, 3) === 200, "Pixmap pixel mismatch");
-
-  const bitmap = modeHandlers.bitmap.create({ width: 8, height: 8 });
-  modeHandlers.bitmap.setPixel(bitmap, 4, 4, 1);
-  assert(modeHandlers.bitmap.getPixel(bitmap, 4, 4) === 1, "Bitmap pixel mismatch");
+  roundTripMode("gr", 3);
+  roundTripMode("dgr", 7);
+  roundTripMode("hgrColor", 1);
+  roundTripMode("hgrMono", 1);
+  roundTripMode("dhgrColor", 1);
+  roundTripMode("dhgrMono", 1);
+  roundTripMode("pixmap", 2, { width: 8, height: 8 });
+  roundTripMode("bitmap", 1, { width: 8, height: 8 });
 
   const palette = paletteForMode(modes.pixmap);
   assert(palette.length === 16, "Pixmap palette length mismatch");

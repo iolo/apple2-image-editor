@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Simple image editor for Apple II GR (Lo-Res), DGR (Double Lo-Res), HGR (Hi-Res), and DHGR (Double Hi-Res) graphics. No build step, no server—open `index.html` in a modern browser.",
   "type": "module",
-  "main": "app.js",
+  "main": "app.mjs",
   "scripts": {
     "test": "node smoke-check.mjs",
     "test:e2e": "node e2e-test.mjs"
@@ -15,7 +15,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "bugs": {
     "url": "https://github.com/iolo/apple2-image-editor/issues"
   },

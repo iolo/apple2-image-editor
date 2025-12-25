@@ -1,4 +1,4 @@
-import { hgrAddress } from "./common.mjs";
+import { hgrAddress, paletteToIndexMap, paletteToRGBA, rgbaToKey } from "./common.mjs";
 
 export const dhgrHandler = {
   create({ width, height }) {
@@ -7,14 +7,6 @@ export const dhgrHandler = {
       aux: new Uint8Array(0x2000),
       width,
       height,
-    };
-  },
-  clone(data) {
-    return {
-      main: new Uint8Array(data.main),
-      aux: new Uint8Array(data.aux),
-      width: data.width,
-      height: data.height,
     };
   },
   toFile(data) {
@@ -64,23 +56,26 @@ const setDhgrBitAt = (data, x, y, on) => {
   bank[offset] = on ? (byte | mask) : (byte & ~mask);
 };
 
+const getColorPixel = (data, x, y) => dhgrNibbleAt(data, x, y);
+
+const setColorPixel = (data, x, y, color) => {
+  const baseX = x * 4;
+  const value = color & 0x0f;
+  setDhgrBitAt(data, baseX, y, (value & 0x01) !== 0);
+  setDhgrBitAt(data, baseX + 1, y, (value & 0x02) !== 0);
+  setDhgrBitAt(data, baseX + 2, y, (value & 0x04) !== 0);
+  setDhgrBitAt(data, baseX + 3, y, (value & 0x08) !== 0);
+};
+
+const getMonoPixel = (data, x, y) => dhgrBitAt(data, x, y);
+
+const setMonoPixel = (data, x, y, color) => {
+  setDhgrBitAt(data, x, y, color !== 0);
+};
+
 export const dhgrColorHandler = {
   create() {
     return dhgrHandler.create({ width: 560, height: 192 });
-  },
-  clone(data) {
-    return dhgrHandler.clone(data);
-  },
-  getPixel(data, x, y) {
-    return dhgrNibbleAt(data, x, y);
-  },
-  setPixel(data, x, y, color) {
-    const baseX = x * 4;
-    const value = color & 0x0f;
-    setDhgrBitAt(data, baseX, y, (value & 0x01) !== 0);
-    setDhgrBitAt(data, baseX + 1, y, (value & 0x02) !== 0);
-    setDhgrBitAt(data, baseX + 2, y, (value & 0x04) !== 0);
-    setDhgrBitAt(data, baseX + 3, y, (value & 0x08) !== 0);
   },
   toFile(data) {
     return dhgrHandler.toFile(data);
@@ -93,6 +88,48 @@ export const dhgrColorHandler = {
       width: 560,
       height: 192,
     };
+  },
+  decode(buffer, opts) {
+    const data = dhgrColorHandler.fromFile(buffer, opts);
+    const palette = paletteToRGBA(opts.palette);
+    const pixels = new Uint8ClampedArray(opts.width * opts.height * 4);
+    for (let y = 0; y < opts.height; y += 1) {
+      for (let x = 0; x < opts.width; x += 1) {
+        const index = getColorPixel(data, x, y) % palette.length;
+        const rgba = palette[index] || [0, 0, 0, 255];
+        const offset = (y * opts.width + x) * 4;
+        pixels[offset] = rgba[0];
+        pixels[offset + 1] = rgba[1];
+        pixels[offset + 2] = rgba[2];
+        pixels[offset + 3] = rgba[3];
+      }
+    }
+    return pixels;
+  },
+  encode(pixels, opts) {
+    const expected = opts.width * opts.height * 4;
+    if (pixels.length !== expected) {
+      throw new Error(`Expected ${expected} bytes for ${opts.width}x${opts.height} RGBA buffer`);
+    }
+    const map = paletteToIndexMap(opts.palette);
+    const data = dhgrColorHandler.create();
+    for (let y = 0; y < opts.height; y += 1) {
+      for (let x = 0; x < opts.width; x += 1) {
+        const offset = (y * opts.width + x) * 4;
+        const key = rgbaToKey(
+          pixels[offset],
+          pixels[offset + 1],
+          pixels[offset + 2],
+          pixels[offset + 3],
+        );
+        const index = map.get(key);
+        if (index === undefined) {
+          throw new Error(`Pixel at ${x},${y} is not in palette`);
+        }
+        setColorPixel(data, x, y, index);
+      }
+    }
+    return dhgrColorHandler.toFile(data);
   },
 };
 
@@ -100,15 +137,6 @@ export const dhgrMonoHandler = {
   create() {
     return dhgrHandler.create({ width: 560, height: 192 });
   },
-  clone(data) {
-    return dhgrHandler.clone(data);
-  },
-  getPixel(data, x, y) {
-    return dhgrBitAt(data, x, y);
-  },
-  setPixel(data, x, y, color) {
-    setDhgrBitAt(data, x, y, color !== 0);
-  },
   toFile(data) {
     return dhgrHandler.toFile(data);
   },
@@ -120,5 +148,47 @@ export const dhgrMonoHandler = {
       width: 560,
       height: 192,
     };
+  },
+  decode(buffer, opts) {
+    const data = dhgrMonoHandler.fromFile(buffer, opts);
+    const palette = paletteToRGBA(opts.palette);
+    const pixels = new Uint8ClampedArray(opts.width * opts.height * 4);
+    for (let y = 0; y < opts.height; y += 1) {
+      for (let x = 0; x < opts.width; x += 1) {
+        const index = getMonoPixel(data, x, y) % palette.length;
+        const rgba = palette[index] || [0, 0, 0, 255];
+        const offset = (y * opts.width + x) * 4;
+        pixels[offset] = rgba[0];
+        pixels[offset + 1] = rgba[1];
+        pixels[offset + 2] = rgba[2];
+        pixels[offset + 3] = rgba[3];
+      }
+    }
+    return pixels;
+  },
+  encode(pixels, opts) {
+    const expected = opts.width * opts.height * 4;
+    if (pixels.length !== expected) {
+      throw new Error(`Expected ${expected} bytes for ${opts.width}x${opts.height} RGBA buffer`);
+    }
+    const map = paletteToIndexMap(opts.palette);
+    const data = dhgrMonoHandler.create();
+    for (let y = 0; y < opts.height; y += 1) {
+      for (let x = 0; x < opts.width; x += 1) {
+        const offset = (y * opts.width + x) * 4;
+        const key = rgbaToKey(
+          pixels[offset],
+          pixels[offset + 1],
+          pixels[offset + 2],
+          pixels[offset + 3],
+        );
+        const index = map.get(key);
+        if (index === undefined) {
+          throw new Error(`Pixel at ${x},${y} is not in palette`);
+        }
+        setMonoPixel(data, x, y, index);
+      }
+    }
+    return dhgrMonoHandler.toFile(data);
   },
 };

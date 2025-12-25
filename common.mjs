@@ -56,6 +56,20 @@ export const colorStringToRGBA = (hex) => {
   return [r, g, b, 255];
 };
 
+export const rgbaToKey = (r, g, b, a = 255) => (
+  ((r & 255) << 24) | ((g & 255) << 16) | ((b & 255) << 8) | (a & 255)
+) >>> 0;
+
+export const paletteToRGBA = (palette) => palette.map((color) => colorStringToRGBA(color));
+
+export const paletteToIndexMap = (palette) => {
+  const map = new Map();
+  paletteToRGBA(palette).forEach((color, idx) => {
+    map.set(rgbaToKey(color[0], color[1], color[2], color[3]), idx);
+  });
+  return map;
+};
+
 export const paletteForMode = (mode) => {
   return mode.palette;
 };

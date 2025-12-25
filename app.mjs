@@ -1,11 +1,12 @@
 import {
   clamp,
-  colorStringToRGBA,
   detectModeFromFile,
   inferDimensions,
   modeHandlers,
   modes,
   paletteForMode,
+  paletteToRGBA,
+  rgbaToKey,
 } from "./modes.mjs";
 import { drawLine, drawRect, floodFill } from "./tools.mjs";
 
@@ -46,7 +47,7 @@ const elements = {
 
 const state = {
   mode: modes.gr,
-  data: null,
+  pixels: null,
   width: modes.gr.width,
   height: modes.gr.height,
   fg: 1,
@@ -56,9 +57,10 @@ const state = {
   caret: { x: 0, y: 0 },
   tool: "pencil",
   dragStart: null,
-  dragColor: 1,
+  dragColor: rgbaToKey(0, 0, 0, 255),
   undo: [],
   redo: [],
+  paletteKeys: [],
 };
 
 let pendingDimensionResolve = null;
@@ -75,6 +77,32 @@ const ensureDialog = (dialog) => {
 const setZoom = (value) => {
   state.zoom = clamp(value, 1, 24);
   render();
+};
+
+const updatePaletteCache = () => {
+  const palette = paletteForMode(state.mode);
+  const rgba = paletteToRGBA(palette);
+  state.paletteKeys = rgba.map((color) => rgbaToKey(color[0], color[1], color[2], color[3]));
+};
+
+const paletteKey = (index) => {
+  if (!state.paletteKeys.length) return rgbaToKey(0, 0, 0, 255);
+  return state.paletteKeys[index % state.paletteKeys.length];
+};
+
+const createBlankPixels = (width, height, key) => {
+  const pixels = new Uint8ClampedArray(width * height * 4);
+  const r = (key >>> 24) & 255;
+  const g = (key >>> 16) & 255;
+  const b = (key >>> 8) & 255;
+  const a = key & 255;
+  for (let i = 0; i < pixels.length; i += 4) {
+    pixels[i] = r;
+    pixels[i + 1] = g;
+    pixels[i + 2] = b;
+    pixels[i + 3] = a;
+  }
+  return pixels;
 };
 
 const updatePaletteGrid = () => {
@@ -149,44 +177,49 @@ const setTool = (tool) => {
 };
 
 const pushUndo = () => {
-  const handler = modeHandlers[state.mode.id];
-  if (!handler || !handler.clone) return;
-  state.undo.push(handler.clone(state.data));
+  if (!state.pixels) return;
+  state.undo.push(new Uint8ClampedArray(state.pixels));
   if (state.undo.length > 50) state.undo.shift();
   state.redo.length = 0;
 };
 
-const restoreData = (data) => {
-  state.data = data;
+const restorePixels = (pixels) => {
+  state.pixels = pixels;
   render();
 };
 
 const undo = () => {
   if (!state.undo.length) return;
-  const handler = modeHandlers[state.mode.id];
   const snapshot = state.undo.pop();
-  state.redo.push(handler.clone(state.data));
-  restoreData(snapshot);
+  state.redo.push(new Uint8ClampedArray(state.pixels));
+  restorePixels(snapshot);
 };
 
 const redo = () => {
   if (!state.redo.length) return;
-  const handler = modeHandlers[state.mode.id];
   const snapshot = state.redo.pop();
-  state.undo.push(handler.clone(state.data));
-  restoreData(snapshot);
+  state.undo.push(new Uint8ClampedArray(state.pixels));
+  restorePixels(snapshot);
 };
 
 const setPixel = (x, y, color) => {
-  const handler = modeHandlers[state.mode.id];
-  if (!handler) return;
-  handler.setPixel(state.data, x, y, color);
+  if (!state.pixels) return;
+  const offset = (y * state.width + x) * 4;
+  state.pixels[offset] = (color >>> 24) & 255;
+  state.pixels[offset + 1] = (color >>> 16) & 255;
+  state.pixels[offset + 2] = (color >>> 8) & 255;
+  state.pixels[offset + 3] = color & 255;
 };
 
 const getPixel = (x, y) => {
-  const handler = modeHandlers[state.mode.id];
-  if (!handler) return 0;
-  return handler.getPixel(state.data, x, y);
+  if (!state.pixels) return 0;
+  const offset = (y * state.width + x) * 4;
+  return rgbaToKey(
+    state.pixels[offset],
+    state.pixels[offset + 1],
+    state.pixels[offset + 2],
+    state.pixels[offset + 3],
+  );
 };
 
 const applyDraw = (x, y, color) => {
@@ -204,19 +237,9 @@ const render = () => {
   const displayScaleX = canvas.width / state.width;
   const displayScaleY = canvas.height / state.height;
 
-  const palette = paletteForMode(state.mode);
   const image = ctx.createImageData(state.width, state.height);
-  const data = image.data;
-  for (let y = 0; y < state.height; y += 1) {
-    for (let x = 0; x < state.width; x += 1) {
-      const idx = (y * state.width + x) * 4;
-      const colorIdx = getPixel(x, y) % palette.length;
-      const [r, g, b, a] = colorStringToRGBA(palette[colorIdx] || "#000000");
-      data[idx] = r;
-      data[idx + 1] = g;
-      data[idx + 2] = b;
-      data[idx + 3] = a;
-    }
+  if (state.pixels && state.pixels.length === image.data.length) {
+    image.data.set(state.pixels);
   }
 
   scratch.width = state.width;
@@ -269,20 +292,46 @@ const setMode = (modeId, width, height, opts = {}) => {
   const mode = modes[modeId];
   if (!mode) return;
   const { preserveData = false } = opts;
-  const handler = modeHandlers[modeId];
+  const nextHandler = modeHandlers[modeId];
   const nextWidth = width || mode.width || state.width;
   const nextHeight = height || mode.height || state.height;
-  const keepData = preserveData && state.data && handler;
+  const prevMode = state.mode;
+  const prevHandler = modeHandlers[prevMode.id];
+  const prevWidth = state.width;
+  const prevHeight = state.height;
+  const prevPixels = state.pixels;
+  const prevPalette = paletteForMode(prevMode);
+  const nextPalette = paletteForMode(mode);
   state.mode = mode;
   state.width = nextWidth;
   state.height = nextHeight;
-  if (!keepData) {
-    state.data = handler.create({ width: state.width, height: state.height });
-    state.undo = [];
-    state.redo = [];
+  updatePaletteCache();
+  let nextPixels = null;
+  if (preserveData && prevPixels && prevHandler?.encode && nextHandler?.decode) {
+    try {
+      const encoded = prevHandler.encode(prevPixels, {
+        width: prevWidth,
+        height: prevHeight,
+        palette: prevPalette,
+      });
+      nextPixels = nextHandler.decode(encoded, {
+        width: nextWidth,
+        height: nextHeight,
+        palette: nextPalette,
+      });
+    } catch (err) {
+      console.warn("Mode switch conversion failed:", err);
+      nextPixels = null;
+    }
+  }
+  if (!nextPixels) {
+    nextPixels = createBlankPixels(state.width, state.height, paletteKey(0));
     state.fg = 1;
     state.bg = 0;
   }
+  state.pixels = nextPixels;
+  state.undo = [];
+  state.redo = [];
   state.caret.x = clamp(state.caret.x, 0, state.width - 1);
   state.caret.y = clamp(state.caret.y, 0, state.height - 1);
   updatePaletteGrid();
@@ -350,13 +399,18 @@ const handleFileOpen = async (file) => {
       height = parseInt(dims.height, 10);
     }
     const handler = modeHandlers[detectedMode.id];
-    const data = handler.fromFile(buffer, { width, height });
-    state.mode = modes[detectedMode.id];
+    const mode = modes[detectedMode.id];
+    const palette = paletteForMode(mode);
+    const pixels = handler.decode(buffer, { width, height, palette });
+    state.mode = mode;
     state.width = width;
     state.height = height;
-    state.data = data;
+    state.pixels = pixels;
     state.undo = [];
     state.redo = [];
+    state.fg = 1;
+    state.bg = 0;
+    updatePaletteCache();
     updatePaletteGrid();
     updateHgrModeControl();
     updateDhgrModeControl();
@@ -371,9 +425,14 @@ const handleFileOpen = async (file) => {
 
 const saveFile = () => {
   const handler = modeHandlers[state.mode.id];
-  if (!handler || !handler.toFile) return;
+  if (!handler || !handler.encode || !state.pixels) return;
   try {
-    const payload = handler.toFile(state.data);
+    const palette = paletteForMode(state.mode);
+    const payload = handler.encode(state.pixels, {
+      width: state.width,
+      height: state.height,
+      palette,
+    });
     const blob = new Blob([payload], { type: "application/octet-stream" });
     const filename = `image.${state.mode.ext.toLowerCase()}`;
     const a = document.createElement("a");
@@ -473,11 +532,11 @@ const setupDialogs = () => {
 
 const setupCanvasDrawing = () => {
   let drawing = false;
-  let drawColor = state.fg;
+  let drawColor = paletteKey(state.fg);
 
   const pickColorFromEvent = (ev) => {
-    if (ev.button === 2 || ev.ctrlKey || ev.metaKey) return state.bg;
-    return state.fg;
+    if (ev.button === 2 || ev.ctrlKey || ev.metaKey) return paletteKey(state.bg);
+    return paletteKey(state.fg);
   };
 
   const toPixel = (ev) => {
@@ -547,7 +606,7 @@ const setupCanvasDrawing = () => {
 
 const drawAtCaretThenMove = (dx, dy) => {
   pushUndo();
-  setPixel(state.caret.x, state.caret.y, state.fg);
+  setPixel(state.caret.x, state.caret.y, paletteKey(state.fg));
   state.caret.x = clamp(state.caret.x + dx, 0, state.width - 1);
   state.caret.y = clamp(state.caret.y + dy, 0, state.height - 1);
   render();
@@ -608,13 +667,13 @@ const handleKeyboard = () => {
       case "d":
       case "D":
         pushUndo();
-        applyDraw(state.caret.x, state.caret.y, state.fg);
+        applyDraw(state.caret.x, state.caret.y, paletteKey(state.fg));
         ev.preventDefault();
         break;
       case "e":
       case "E":
         pushUndo();
-        applyDraw(state.caret.x, state.caret.y, state.bg);
+        applyDraw(state.caret.x, state.caret.y, paletteKey(state.bg));
         ev.preventDefault();
         break;
       case "s":

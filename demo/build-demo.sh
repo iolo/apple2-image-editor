@@ -23,6 +23,16 @@ a2kit delete -d demo.dsk -f dhgr
 a2kit tokenize -t atxt -a 2049 < dhgr.abas | a2kit put -d demo.dsk -t atok -f dhgr
 a2kit put -d demo.dsk -f image.dhgr -t bin -a 2000 < image.dhgr
 
+a2kit delete -d demo.dsk -f image.pixmap
+a2kit delete -d demo.dsk -f pixmap
+a2kit tokenize -t atxt -a 2049 < pixmap.abas | a2kit put -d demo.dsk -t atok -f pixmap
+a2kit put -d demo.dsk -f image.pixmap -t bin -a 2000 < image.pixmap
+
+a2kit delete -d demo.dsk -f image.bitmap
+a2kit delete -d demo.dsk -f bitmap
+a2kit tokenize -t atxt -a 2049 < bitmap.abas | a2kit put -d demo.dsk -t atok -f bitmap
+a2kit put -d demo.dsk -f image.bitmap -t bin -a 2000 < image.bitmap
+
 # on windows: https://github.com/AppleWin/AppleWin
 # applewin -d1 demo.dsk
 # on linux: https://github.com/audetto/AppleWin
