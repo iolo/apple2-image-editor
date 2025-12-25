@@ -39,9 +39,9 @@ const dhgrBitAt = (data, x, y) => {
   const column = x >> 1;
   const offset = hgrAddress(column, y);
   const mask = 1 << (column % 7);
-  const mainByte = data.main[offset] || 0;
-  const auxByte = data.aux[offset] || 0;
-  return (mainByte & mask) || (auxByte & mask) ? 1 : 0;
+  const bank = (x & 1) ? data.main : data.aux;
+  const byte = bank[offset] || 0;
+  return (byte & mask) ? 1 : 0;
 };
 
 const dhgrNibbleAt = (data, x, y) => {
@@ -59,13 +59,9 @@ const setDhgrBitAt = (data, x, y, on) => {
   const column = x >> 1;
   const offset = hgrAddress(column, y);
   const mask = 1 << (column % 7);
-  if (x & 1) {
-    const auxByte = data.aux[offset] || 0;
-    data.aux[offset] = on ? (auxByte | mask) : (auxByte & ~mask);
-  } else {
-    const mainByte = data.main[offset] || 0;
-    data.main[offset] = on ? (mainByte | mask) : (mainByte & ~mask);
-  }
+  const bank = (x & 1) ? data.main : data.aux;
+  const byte = bank[offset] || 0;
+  bank[offset] = on ? (byte | mask) : (byte & ~mask);
 };
 
 export const dhgrColorHandler = {
@@ -111,18 +107,7 @@ export const dhgrMonoHandler = {
     return dhgrBitAt(data, x, y);
   },
   setPixel(data, x, y, color) {
-    const column = x >> 1;
-    const offset = hgrAddress(column, y);
-    const mask = 1 << (column % 7);
-    const mainByte = data.main[offset] || 0;
-    const auxByte = data.aux[offset] || 0;
-    if (color === 0) {
-      data.main[offset] = mainByte & ~mask;
-      data.aux[offset] = auxByte & ~mask;
-    } else {
-      data.main[offset] = mainByte | mask;
-      data.aux[offset] = auxByte | mask;
-    }
+    setDhgrBitAt(data, x, y, color !== 0);
   },
   toFile(data) {
     return dhgrHandler.toFile(data);

@@ -32,6 +32,7 @@ On screen, even and odd columns are interleaved:
 
 - Even x (0, 2, 4, ...) use the aux bank
 - Odd x (1, 3, 5, ...) use the main bank
+- Note: file order is main then aux, but display interleaves aux (even) before main (odd).
 
 When computing the byte address, the editor uses `column = x >> 1` (0..279) and the standard HGR addressing:
 
@@ -85,7 +86,7 @@ True DHGR artifact color is complex. The editor uses a simplified per-pixel mapp
 
 ## File Format
 
-The `.DHGR` file is a raw dump of both banks (aux first, main second). There is no header.
+The `.DHGR` file is a raw dump of both banks (main first, aux second). There is no header.
 
 ## Editor Modes
 

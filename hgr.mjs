@@ -64,8 +64,7 @@ export const hgrMonoHandler = {
     return hgrHandler.toFile(data);
   },
   fromFile(buffer) {
-    if (buffer.byteLength !== 0x2000) throw new Error("Expected 0x2000 bytes for .HGR");
-    return { memory: new Uint8Array(buffer), width: 280, height: 192 };
+    return hgrHandler.fromFile(buffer, { width: 280, height: 192 });
   },
 };
 
@@ -121,7 +120,6 @@ export const hgrColorHandler = {
     return hgrHandler.toFile(data);
   },
   fromFile(buffer) {
-    if (buffer.byteLength !== 0x2000) throw new Error("Expected 0x2000 bytes for .HGR");
-    return { memory: new Uint8Array(buffer), width: 280, height: 192 };
+    return hgrHandler.fromFile(buffer, { width: 280, height: 192 });
   },
 };
