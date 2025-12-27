@@ -1,76 +1,48 @@
-import { grAddress, paletteToIndexMap, paletteToRGBA, rgbaToKey } from "./common.mjs";
 
-const getPixel = (data, x, y) => {
-  const row24 = y >> 1;
-  const offset = grAddress(x, row24);
-  const value = data.memory[offset] || 0;
-  return (y & 1) ? (value >> 4) & 0x0f : value & 0x0f;
-};
+export const COLORS = [
+  '#000000', '#DD0033', '#0000AA', '#DD00CC',
+  '#006600', '#777777', '#0000FF', '#33CCFF',
+  '#885500', '#FF6600', '#AAAAAA', '#FF9999',
+  '#00AA00', '#FFFF00', '#00FF00', '#FFFFFF',
+];
 
-const setPixel = (data, x, y, color) => {
-  const row24 = y >> 1;
-  const offset = grAddress(x, row24);
-  const original = data.memory[offset] || 0;
+export const TEXT_OFFSET = [
+	0x0000,0x0080,0x0100,0x0180,0x0200,0x0280,0x0300,0x0380,
+	0x0028,0x00A8,0x0128,0x01A8,0x0228,0x02A8,0x0328,0x03A8,
+	0x0050,0x00D0,0x0150,0x01D0,0x0250,0x02D0,0x0350,0x03D0,
+];
+
+let framebuffer;
+
+export function init(buffer) {
+  framebuffer = new Uint8Array(buffer);
+}
+
+export function toBuffer() {
+  return new Uint8Buffer(framebuffer);
+}
+
+function pixelOffset(x, y) {
+  return TEXT_OFFSET[y >> 1] + x;
+}
+
+export function getPixel(x, y) {
+  const offset = pixelOffset(x, y);
+  const byte = framebuffer[offset];
   if (y & 1) {
-    data.memory[offset] = (original & 0x0f) | ((color & 0x0f) << 4);
-  } else {
-    data.memory[offset] = (original & 0xf0) | (color & 0x0f);
+    // odd row -> high nibble
+    return (byte >> 4) & 0x0f;
   }
-};
+  // even row -> low nibble
+  return byte & 0x0f;
+}
 
-export const grHandler = {
-  create({ width, height }) {
-    return { memory: new Uint8Array(0x400), width, height };
-  },
-  toFile(data) {
-    const out = new Uint8Array(0x400);
-    out.set(data.memory.slice(0, 0x400));
-    return out;
-  },
-  fromFile(buffer, opts) {
-    if (buffer.byteLength !== 0x400) throw new Error("Expected 0x400 bytes for .GR");
-    return { memory: new Uint8Array(buffer), width: opts.width, height: opts.height };
-  },
-  decode(buffer, opts) {
-    const data = grHandler.fromFile(buffer, opts);
-    const palette = paletteToRGBA(opts.palette);
-    const pixels = new Uint8ClampedArray(opts.width * opts.height * 4);
-    for (let y = 0; y < opts.height; y += 1) {
-      for (let x = 0; x < opts.width; x += 1) {
-        const index = getPixel(data, x, y) % palette.length;
-        const rgba = palette[index] || [0, 0, 0, 255];
-        const offset = (y * opts.width + x) * 4;
-        pixels[offset] = rgba[0];
-        pixels[offset + 1] = rgba[1];
-        pixels[offset + 2] = rgba[2];
-        pixels[offset + 3] = rgba[3];
-      }
-    }
-    return pixels;
-  },
-  encode(pixels, opts) {
-    const expected = opts.width * opts.height * 4;
-    if (pixels.length !== expected) {
-      throw new Error(`Expected ${expected} bytes for ${opts.width}x${opts.height} RGBA buffer`);
-    }
-    const map = paletteToIndexMap(opts.palette);
-    const data = grHandler.create({ width: opts.width, height: opts.height });
-    for (let y = 0; y < opts.height; y += 1) {
-      for (let x = 0; x < opts.width; x += 1) {
-        const offset = (y * opts.width + x) * 4;
-        const key = rgbaToKey(
-          pixels[offset],
-          pixels[offset + 1],
-          pixels[offset + 2],
-          pixels[offset + 3],
-        );
-        const index = map.get(key);
-        if (index === undefined) {
-          throw new Error(`Pixel at ${x},${y} is not in palette`);
-        }
-        setPixel(data, x, y, index);
-      }
-    }
-    return grHandler.toFile(data);
-  },
-};
+export function setPixel(x, y, color) {
+  const offset = pixelOffset(x, y);
+  const byte = framebuffer[offset];
+  if (y & 1) {
+    framebuffer[offset] = (byte & 0x0f) | ((color & 0x0f) << 4);
+  } else {
+    framebuffer[offset] = (byte & 0xf0) | (color & 0x0f);
+  }
+}

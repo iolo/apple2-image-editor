@@ -16,7 +16,7 @@ DHGR (Double Hi-Res) uses the same interleaved HGR address scheme, but the pixel
 
 - Main bank: 0x2000 bytes
 - Aux bank: 0x2000 bytes
-- Each bank stores 280 columns (half of the 560 columns)
+- Each bank stores 280 pixels (40 bytes * 7 pixels)
 - Each byte stores 7 pixels and one phase bit (bit 7)
 
 The file layout is:
@@ -28,28 +28,31 @@ offset 0x2000 .. 0x3FFF: aux bank
 
 ## Column Interleave
 
-On screen, even and odd columns are interleaved:
+On screen, bytes are interleaved:
 
-- Even x (0, 2, 4, ...) use the aux bank
-- Odd x (1, 3, 5, ...) use the main bank
-- Note: file order is main then aux, but display interleaves aux (even) before main (odd).
+- 7 pixels from the aux byte are displayed first
+- 7 pixels from the corresponding main byte follow
+- The pattern repeats for each subsequent byte
 
-When computing the byte address, the editor uses `column = x >> 1` (0..279) and the standard HGR addressing:
+When computing the byte address, the editor treats the 560-pixel line as 80 groups of 7 pixels.
+Group 0 maps to the aux byte 0, group 1 to main byte 0, group 2 to aux byte 1, and so on.
 
 ```js
-const column = x >> 1;
-const byteX = Math.floor(column / 7);
+const group = Math.floor(x / 7);      // 0..79
+const bit = x % 7;
+const byteX = Math.floor(group / 2);  // 0..39
 const offset =
   (y & 0x07) * 0x400 +
   ((y >> 3) & 0x07) * 0x80 +
   (y >> 6) * 0x28 +
   byteX;
+const bank = (group % 2 === 0) ? aux : main;
 ```
 
-Each byte covers 7 pixels within that 280-column stream:
+Each byte covers 7 pixels within its half-line stream:
 
 ```
-bit = (byte >> (column % 7)) & 1
+bit = (byte >> bit) & 1
 ```
 
 ## No Phase Bits
@@ -60,7 +63,7 @@ Unlike HGR Color mode, no phase bits in DHGR mode. All MSB bits are ignored.
 
 True DHGR artifact color is complex. The editor uses a simplified per-pixel mapping that selects a lo-res palette index based on.
 
-- 4 bytes(2 from each bank) represent 7 pixels.
+- 4 bytes (2 from each bank) represent 7 pixels (28 serial bits).
 - Each pixel consists of 4 bits.
 - 4 bits determine the color of each pixel.
 - Mono mode ignores color and renders any set bit as white.

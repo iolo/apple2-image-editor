@@ -1,96 +1,56 @@
-import { grAddress, paletteToIndexMap, paletteToRGBA, rgbaToKey } from "./common.mjs";
+export { COLORS } from './gr.mjs';
 
-const auxColorDecode = (value) => ((value & 1) << 3) | (value >> 1);
-const auxColorEncode = (value) => ((value << 1) & 0x0f) | (value >> 3);
+import { TEXT_OFFSET } from './gr.mjs';
 
-const getPixel = (data, x, y) => {
-  const bank = (x & 1) ? data.aux : data.main;
-  const column = x >> 1;
-  const row24 = y >> 1;
-  const offset = grAddress(column, row24);
-  const byte = bank[offset] || 0;
-  const color = (y & 1) ? (byte >> 4) & 0x0f : byte & 0x0f;
-  return (x & 1) ? auxColorDecode(color) : color;
-};
+// ((color << 1) & 0x0f) | (color >> 3);
+export const MAIN_TO_AUX_COLORS = [
+  0x0, 0x8, 0x1, 0x9, 0x2, 0xa, 0x3, 0xb,
+  0x4, 0xc, 0x5, 0xd, 0x6, 0xe, 0x7, 0xf,
+];
 
-const setPixel = (data, x, y, color) => {
-  const bank = (x & 1) ? data.aux : data.main;
-  const column = x >> 1;
-  const row24 = y >> 1;
-  const offset = grAddress(column, row24);
-  const original = bank[offset] || 0;
-  const stored = (x & 1) ? auxColorEncode(color & 0x0f) : (color & 0x0f);
+// ((color & 1) << 3) | (value >> 1);
+export const AUX_TO_MAIN_COLORS = [
+  0x0, 0x2, 0x4, 0x6, 0x8, 0xa, 0xc, 0xe,
+  0x1, 0x3, 0x5, 0x7, 0x9, 0xb, 0xd, 0xf,
+];
+
+let main;
+let aux;
+
+export function init(buffer) {
+  main = new Uint8Array(buffer.slice(0, 0x400));
+  aux = new Uint8Array(buffer.slice(0x400));
+}
+
+export function toBuffer() {
+  const buffer = new Uint8Buffer();
+  buffer.set(aux);
+  buffer.set(main);
+  return buffer;
+}
+
+// y: 0..48 -> 0..23
+// x: 0..79 -> 0..39
+function pixelOffset(x, y) {
+  return TEXT_OFFSET[y >> 1] + (x >> 1);
+}
+
+export function getPixel(x, y) {
+  const offset = pixelOffset(x, y);
+  const bank = x & 1 ? aux : main;
+  const byte = bank[offset];
+  const color = y & 1 ? (byte >> 4) & 0x0f : (byte & 0x0f);
+  return x & 1 ? color : AUX_TO_MAIN_COLORS[color];
+}
+
+export function setPixel(x, y, color) {
+  const offset = pixelOffset(x, y);
+  const bank = x & 1 ? main : aux;
+  const byte = bank[offset];
+  const stored = x & 1 ? (color & 0x0f) : MAIN_TO_AUX_COLORS[color & 0x0f];
   if (y & 1) {
-    bank[offset] = (original & 0x0f) | (stored << 4);
+    bank[offset] = (byte & 0x0f) | (stored << 4);
   } else {
-    bank[offset] = (original & 0xf0) | stored;
+    bank[offset] = (byte & 0xf0) | stored;
   }
-};
-
-export const dgrHandler = {
-  create({ width, height }) {
-    return {
-      main: new Uint8Array(0x400),
-      aux: new Uint8Array(0x400),
-      width,
-      height,
-    };
-  },
-  toFile(data) {
-    const out = new Uint8Array(0x800);
-    out.set(data.main.slice(0, 0x400));
-    out.set(data.aux.slice(0, 0x400), 0x400);
-    return out;
-  },
-  fromFile(buffer, opts) {
-    if (buffer.byteLength !== 0x800) throw new Error("Expected 0x800 bytes for .DGR");
-    return {
-      main: new Uint8Array(buffer.slice(0, 0x400)),
-      aux: new Uint8Array(buffer.slice(0x400)),
-      width: opts.width,
-      height: opts.height,
-    };
-  },
-  decode(buffer, opts) {
-    const data = dgrHandler.fromFile(buffer, opts);
-    const palette = paletteToRGBA(opts.palette);
-    const pixels = new Uint8ClampedArray(opts.width * opts.height * 4);
-    for (let y = 0; y < opts.height; y += 1) {
-      for (let x = 0; x < opts.width; x += 1) {
-        const index = getPixel(data, x, y) % palette.length;
-        const rgba = palette[index] || [0, 0, 0, 255];
-        const offset = (y * opts.width + x) * 4;
-        pixels[offset] = rgba[0];
-        pixels[offset + 1] = rgba[1];
-        pixels[offset + 2] = rgba[2];
-        pixels[offset + 3] = rgba[3];
-      }
-    }
-    return pixels;
-  },
-  encode(pixels, opts) {
-    const expected = opts.width * opts.height * 4;
-    if (pixels.length !== expected) {
-      throw new Error(`Expected ${expected} bytes for ${opts.width}x${opts.height} RGBA buffer`);
-    }
-    const map = paletteToIndexMap(opts.palette);
-    const data = dgrHandler.create({ width: opts.width, height: opts.height });
-    for (let y = 0; y < opts.height; y += 1) {
-      for (let x = 0; x < opts.width; x += 1) {
-        const offset = (y * opts.width + x) * 4;
-        const key = rgbaToKey(
-          pixels[offset],
-          pixels[offset + 1],
-          pixels[offset + 2],
-          pixels[offset + 3],
-        );
-        const index = map.get(key);
-        if (index === undefined) {
-          throw new Error(`Pixel at ${x},${y} is not in palette`);
-        }
-        setPixel(data, x, y, index);
-      }
-    }
-    return dgrHandler.toFile(data);
-  },
-};
+}
