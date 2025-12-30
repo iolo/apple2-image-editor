@@ -1,0 +1,31 @@
+{
+  "name": "apple2-image-editor",
+  "version": "1.0.0",
+  "description": "Simple image editor for Apple II",
+  "author": "Dongsu Jang <iolo@kakao.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iolo/apple2-image-editor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/iolo/apple2-image-editor/issues"
+  },
+  "homepage": "https://github.com/iolo/apple2-image-editor#readme",
+  "type": "module",
+  "main": "app.mjs",
+  "scripts": {
+    "start": "npx serve",
+    "test": "node smoke-check.mjs",
+    "test:e2e": "node e2e-test.mjs",
+    "lint": "npx eslint .",
+    "prettier": "npx prettier -w ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@playwright/test": "^1.57.0",
+    "eslint": "^9.39.2",
+    "globals": "^16.5.0",
+    "serve": "^14.2.5"
+  }
+}

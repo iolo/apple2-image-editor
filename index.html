@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>apple2-image-editor</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="app-header">
+        <h1>apple2-image-editor</h1>
+        <div class="toolbar">
+          <button id="newButton" type="button">New</button>
+          <button id="openButton" type="button">Open</button>
+          <button id="saveButton" type="button">Save</button>
+          <button id="settingsButton" type="button">Settings</button>
+          <button id="aboutButton" type="button">About</button>
+          <input
+            id="fileInput"
+            type="file"
+            accept=".gr,.dgr,.hgr,.dhgr,.pixmap,.bitmap"
+            hidden
+          />
+        </div>
+      </header>
+
+      <main class="app-main">
+        <section class="panel toolbox" aria-label="Drawing toolbox">
+          <header class="panel-header">
+            <h2>Toolbox</h2>
+          </header>
+          <div class="tool-row">
+            <button id="swapColors" type="button" title="Swap colors (S)">
+              Swap
+            </button>
+            <button id="undoButton" type="button" title="Undo (Ctrl+Z)">
+              Undo
+            </button>
+            <button id="redoButton" type="button" title="Redo (Ctrl+Y)">
+              Redo
+            </button>
+          </div>
+          <div
+            class="tool-row tools"
+            id="toolButtons"
+            role="group"
+            aria-label="Tools"
+          >
+            <button type="button" data-tool="pencil" class="active">
+              Pencil
+            </button>
+            <button type="button" data-tool="line">Line</button>
+            <button type="button" data-tool="rect">Rect</button>
+            <button type="button" data-tool="fill">Fill</button>
+          </div>
+          <div class="tool-row">
+            <button id="zoomOut" type="button" title="Zoom out (-)">-</button>
+            <button id="zoomIn" type="button" title="Zoom in (+)">+</button>
+            <label class="inline">
+              <input id="gridToggle" type="checkbox" checked />
+              Pixel grid
+            </label>
+          </div>
+          <div class="tool-row">
+            <label class="inline">
+              HGR (Hi-Res) mode
+              <select id="hgrModeSelect">
+                <option value="hgrColor">Color (140x192)</option>
+                <option value="hgrMono">Mono (280x192)</option>
+              </select>
+            </label>
+          </div>
+          <div class="tool-row">
+            <label class="inline">
+              DHGR (Double Hi-Res) mode
+              <select id="dhgrModeSelect">
+                <option value="dhgrColor">Color (140x192)</option>
+                <option value="dhgrMono">Mono (560x192)</option>
+              </select>
+            </label>
+          </div>
+          <div class="tool-row color-preview">
+            <div>
+              <div class="swatch-label">FG</div>
+              <div class="swatch fg" id="fgPreview"></div>
+            </div>
+            <div>
+              <div class="swatch-label">BG</div>
+              <div class="swatch bg" id="bgPreview"></div>
+            </div>
+          </div>
+          <div class="tool-row caret-row">
+            <span>Cursor:</span>
+            <span id="cursorPos">(0, 0)</span>
+          </div>
+        </section>
+
+        <section class="panel drawing-area" aria-label="Drawing area">
+          <header class="panel-header">
+            <h2>Drawing Area</h2>
+            <div class="status">
+              <span id="modeInfo">—</span>
+              <span id="zoomInfo">—</span>
+            </div>
+          </header>
+          <div class="canvas-wrapper">
+            <canvas id="drawingCanvas" width="560" height="192"></canvas>
+          </div>
+        </section>
+
+        <section class="panel palette" aria-label="Color palette">
+          <header class="panel-header">
+            <h2>Palette</h2>
+            <div class="palette-meta" id="paletteMeta"></div>
+          </header>
+          <div class="swatch-grid" id="paletteGrid"></div>
+        </section>
+      </main>
+
+      <footer class="app-footer">
+        <span>© 2025</span>
+        <nav>
+          <a href="https://iolo.kr" target="_blank" rel="noreferrer noopener"
+            >Home</a
+          >
+          <a
+            href="https://github.com/iolo/apple2-image-editor"
+            target="_blank"
+            rel="noreferrer noopener"
+            >GitHub</a
+          >
+        </nav>
+      </footer>
+    </div>
+
+    <dialog id="newDialog">
+      <form method="dialog" id="newForm" class="dialog-form">
+        <header>
+          <h3>New image</h3>
+        </header>
+        <label>
+          Mode
+          <select id="modeSelect" name="mode">
+            <option value="gr">GR (Lo-Res, 40x48)</option>
+            <option value="dgr">DGR (Double Lo-Res, 80x48)</option>
+            <option value="hgrColor">HGR Color (Hi-Res, 140x192)</option>
+            <option value="hgrMono">HGR Mono (Hi-Res, 280x192)</option>
+            <option value="dhgrColor">
+              DHGR Color (Double Hi-Res, 140x192)
+            </option>
+            <option value="dhgrMono">DHGR Mono (Double Hi-Res, 560x192)</option>
+            <option value="pixmap">
+              Pixmap (custom size, 256 colors, .PIXMAP)
+            </option>
+            <option value="bitmap">
+              Bitmap (custom size, 2 colors, .BITMAP)
+            </option>
+          </select>
+        </label>
+        <div class="dimensions">
+          <label>
+            Width
+            <input
+              id="widthInput"
+              name="width"
+              type="number"
+              min="1"
+              value="40"
+            />
+          </label>
+          <label>
+            Height
+            <input
+              id="heightInput"
+              name="height"
+              type="number"
+              min="1"
+              value="48"
+            />
+          </label>
+        </div>
+        <menu class="dialog-actions">
+          <button value="cancel" type="reset">Cancel</button>
+          <button value="ok" type="submit">Create</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog id="settingsDialog">
+      <form method="dialog" id="settingsForm" class="dialog-form">
+        <header>
+          <h3>Settings</h3>
+        </header>
+        <label class="inline">
+          <input type="checkbox" id="prefGrid" checked />
+          Show grid when zoom ≥ 4
+        </label>
+        <label>
+          Default zoom
+          <input type="number" id="prefZoom" min="1" max="24" value="8" />
+        </label>
+        <menu class="dialog-actions">
+          <button value="cancel" type="reset">Cancel</button>
+          <button value="ok" type="submit">Save</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog id="aboutDialog">
+      <form method="dialog" class="dialog-form">
+        <header>
+          <h3>About</h3>
+        </header>
+        <p>
+          Simple image editor for Apple II GR (Lo-Res), DGR (Double Lo-Res), HGR
+          (Hi-Res), and DHGR (Double Hi-Res) graphics.
+        </p>
+        <p>No server. No transpiler. Just HTML, CSS, and JavaScript.</p>
+        <menu class="dialog-actions">
+          <button value="ok" type="submit">Close</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog id="dimensionDialog">
+      <form method="dialog" id="dimensionForm" class="dialog-form">
+        <header>
+          <h3>Image size</h3>
+        </header>
+        <p class="muted">Enter width and height for this file.</p>
+        <div class="dimensions">
+          <label>
+            Width
+            <input
+              id="dimWidth"
+              name="width"
+              type="number"
+              min="1"
+              value="64"
+              required
+            />
+          </label>
+          <label>
+            Height
+            <input
+              id="dimHeight"
+              name="height"
+              type="number"
+              min="1"
+              value="64"
+              required
+            />
+          </label>
+        </div>
+        <menu class="dialog-actions">
+          <button value="cancel" type="reset">Cancel</button>
+          <button value="ok" type="submit">OK</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <script type="module" src="app.mjs" defer></script>
+  </body>
+</html>
