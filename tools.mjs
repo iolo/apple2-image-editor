@@ -38,6 +38,40 @@ export const drawRect = (x0, y0, x1, y1, color, setPixel, width, height) => {
   }
 };
 
+export const drawEllipse = (x0, y0, x1, y1, color, setPixel, width, height) => {
+  const minX = Math.max(Math.min(x0, x1), 0);
+  const maxX = Math.min(Math.max(x0, x1), width - 1);
+  const minY = Math.max(Math.min(y0, y1), 0);
+  const maxY = Math.min(Math.max(y0, y1), height - 1);
+  const rx = (maxX - minX) / 2;
+  const ry = (maxY - minY) / 2;
+  const cx = minX + rx;
+  const cy = minY + ry;
+
+  if (rx === 0 || ry === 0) {
+    drawLine(minX, minY, maxX, maxY, color, setPixel, width, height);
+    return;
+  }
+
+  for (let x = minX; x <= maxX; x += 1) {
+    const dx = (x - cx) / rx;
+    const dy = Math.sqrt(Math.max(0, 1 - dx * dx)) * ry;
+    const y1 = Math.round(cy - dy);
+    const y2 = Math.round(cy + dy);
+    if (y1 >= 0 && y1 < height) setPixel(x, y1, color);
+    if (y2 >= 0 && y2 < height) setPixel(x, y2, color);
+  }
+
+  for (let y = minY; y <= maxY; y += 1) {
+    const dy = (y - cy) / ry;
+    const dx = Math.sqrt(Math.max(0, 1 - dy * dy)) * rx;
+    const x1 = Math.round(cx - dx);
+    const x2 = Math.round(cx + dx);
+    if (x1 >= 0 && x1 < width) setPixel(x1, y, color);
+    if (x2 >= 0 && x2 < width) setPixel(x2, y, color);
+  }
+};
+
 export const floodFill = (sx, sy, color, getPixel, setPixel, width, height) => {
   if (sx < 0 || sy < 0 || sx >= width || sy >= height) return;
   const target = getPixel(sx, sy);

@@ -1,5 +1,5 @@
 import { detectMode, modes, Palette, encode, decode } from './apple2.mjs';
-import { drawLine, drawRect, floodFill } from './tools.mjs';
+import { drawLine, drawRect, drawEllipse, floodFill } from './tools.mjs';
 
 const canvas = document.getElementById('drawingCanvas');
 const ctx = canvas.getContext('2d');
@@ -44,6 +44,7 @@ const TOOLS = {
   PENCIL: 'pencil',
   LINE: 'line',
   RECT: 'rect',
+  ELLIPSE: 'ellipse',
   FILL: 'fill',
 };
 
@@ -379,6 +380,28 @@ const render = () => {
         rect.width * displayScaleX - 1,
         rect.height * displayScaleY - 1
       );
+    } else if (shapePreview.tool === TOOLS.ELLIPSE) {
+      const rect = normalizeRect(
+        shapePreview.x1,
+        shapePreview.y1,
+        shapePreview.x2,
+        shapePreview.y2
+      );
+      const left = rect.x * displayScaleX + 0.5;
+      const top = rect.y * displayScaleY + 0.5;
+      const widthPx = rect.width * displayScaleX - 1;
+      const heightPx = rect.height * displayScaleY - 1;
+      ctx.beginPath();
+      ctx.ellipse(
+        left + widthPx / 2,
+        top + heightPx / 2,
+        Math.max(0.5, widthPx / 2),
+        Math.max(0.5, heightPx / 2),
+        0,
+        0,
+        Math.PI * 2
+      );
+      ctx.stroke();
     }
     ctx.restore();
   }
@@ -833,7 +856,11 @@ const setupCanvasDrawing = () => {
       applyDraw(x, y, drawColor);
       return;
     }
-    if (state.tool === TOOLS.LINE || state.tool === TOOLS.RECT) {
+    if (
+      state.tool === TOOLS.LINE ||
+      state.tool === TOOLS.RECT ||
+      state.tool === TOOLS.ELLIPSE
+    ) {
       shapePreview.active = true;
       shapePreview.tool = state.tool;
       shapePreview.x1 = x;
@@ -911,6 +938,18 @@ const setupCanvasDrawing = () => {
       render();
     } else if (state.tool === TOOLS.RECT) {
       drawRect(
+        dragX,
+        dragY,
+        x,
+        y,
+        drawColor,
+        setPixel,
+        state.width,
+        state.height
+      );
+      render();
+    } else if (state.tool === TOOLS.ELLIPSE) {
+      drawEllipse(
         dragX,
         dragY,
         x,
