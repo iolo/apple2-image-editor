@@ -7,6 +7,9 @@ ctx.imageSmoothingEnabled = false;
 const scratch = document.createElement('canvas');
 const scratchCtx = scratch.getContext('2d');
 scratchCtx.imageSmoothingEnabled = false;
+const selectionCanvas = document.createElement('canvas');
+const selectionCtx = selectionCanvas.getContext('2d');
+selectionCtx.imageSmoothingEnabled = false;
 
 const elements = {
   newDialog: document.getElementById('newDialog'),
@@ -37,6 +40,7 @@ const elements = {
 };
 
 const TOOLS = {
+  SELECT: 'select',
   PENCIL: 'pencil',
   LINE: 'line',
   RECT: 'rect',
@@ -70,6 +74,91 @@ let pendingDimensionResolve = null;
 let pendingDimensionReject = null;
 
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+const selection = {
+  active: false,
+  x: 0,
+  y: 0,
+  width: 0,
+  height: 0,
+  buffer: null,
+  selecting: false,
+  selectStartX: 0,
+  selectStartY: 0,
+  dragging: false,
+  dragStartX: 0,
+  dragStartY: 0,
+  previewX: 0,
+  previewY: 0,
+  mode: null,
+};
+
+const clearSelection = () => {
+  selection.active = false;
+  selection.buffer = null;
+  selection.selecting = false;
+  selection.dragging = false;
+  selection.mode = null;
+};
+
+const normalizeRect = (x1, y1, x2, y2) => {
+  const x = Math.min(x1, x2);
+  const y = Math.min(y1, y2);
+  const width = Math.abs(x2 - x1) + 1;
+  const height = Math.abs(y2 - y1) + 1;
+  return { x, y, width, height };
+};
+
+const captureSelection = (x, y, width, height) => {
+  const buffer = new Uint8Array(width * height * 4);
+  for (let row = 0; row < height; row += 1) {
+    const srcStart = ((y + row) * state.width + x) * 4;
+    const srcEnd = srcStart + width * 4;
+    const destStart = row * width * 4;
+    buffer.set(state.pixels.subarray(srcStart, srcEnd), destStart);
+  }
+  return buffer;
+};
+
+const blitBuffer = (buffer, srcWidth, srcHeight, destX, destY) => {
+  const startX = Math.max(0, destX);
+  const startY = Math.max(0, destY);
+  const endX = Math.min(state.width, destX + srcWidth);
+  const endY = Math.min(state.height, destY + srcHeight);
+  if (endX <= startX || endY <= startY) return;
+
+  const srcOffsetX = startX - destX;
+  const srcOffsetY = startY - destY;
+  const copyWidth = endX - startX;
+
+  for (let row = 0; row < endY - startY; row += 1) {
+    const srcRow = (srcOffsetY + row) * srcWidth + srcOffsetX;
+    const destRow = (startY + row) * state.width + startX;
+    const srcStart = srcRow * 4;
+    const srcEnd = (srcRow + copyWidth) * 4;
+    const destStart = destRow * 4;
+    state.pixels.set(buffer.subarray(srcStart, srcEnd), destStart);
+  }
+};
+
+const fillRect = (x, y, width, height, color) => {
+  const startX = Math.max(0, x);
+  const startY = Math.max(0, y);
+  const endX = Math.min(state.width, x + width);
+  const endY = Math.min(state.height, y + height);
+  if (endX <= startX || endY <= startY) return;
+
+  const [r, g, b] = Palette.toRgb(color);
+  for (let row = startY; row < endY; row += 1) {
+    for (let col = startX; col < endX; col += 1) {
+      const offset = (row * state.width + col) * 4;
+      state.pixels[offset] = r;
+      state.pixels[offset + 1] = g;
+      state.pixels[offset + 2] = b;
+      state.pixels[offset + 3] = 255;
+    }
+  }
+};
 
 const setZoom = (value) => {
   state.zoom = clamp(value, MIN_ZOOM, MAX_ZOOM);
@@ -134,6 +223,9 @@ const updateStatus = () => {
 };
 
 const setTool = (tool) => {
+  if (tool !== TOOLS.SELECT) {
+    clearSelection();
+  }
   state.tool = tool;
   if (elements.toolButtons) {
     elements.toolButtons.querySelectorAll('[data-tool]').forEach((btn) => {
@@ -152,6 +244,7 @@ const pushUndo = () => {
 
 const restorePixels = (pixels) => {
   state.pixels = pixels;
+  clearSelection();
   render();
 };
 
@@ -248,6 +341,48 @@ const render = () => {
     ctx.restore();
   }
 
+  if (selection.selecting || selection.active) {
+    const usePreview = selection.dragging && selection.active;
+    const selX = usePreview ? selection.previewX : selection.x;
+    const selY = usePreview ? selection.previewY : selection.y;
+    const selW = selection.width;
+    const selH = selection.height;
+
+    if (selection.active && selection.buffer && selection.dragging) {
+      selectionCanvas.width = selW;
+      selectionCanvas.height = selH;
+      const selImage = new ImageData(
+        new Uint8ClampedArray(selection.buffer),
+        selW,
+        selH
+      );
+      selectionCtx.putImageData(selImage, 0, 0);
+      ctx.drawImage(
+        selectionCanvas,
+        0,
+        0,
+        selW,
+        selH,
+        selX * displayScaleX,
+        selY * displayScaleY,
+        selW * displayScaleX,
+        selH * displayScaleY
+      );
+    }
+
+    ctx.save();
+    ctx.strokeStyle = '#4da3ff';
+    ctx.lineWidth = Math.max(1, Math.floor(state.zoom / 4));
+    ctx.setLineDash([4, 4]);
+    ctx.strokeRect(
+      selX * displayScaleX + 0.5,
+      selY * displayScaleY + 0.5,
+      selW * displayScaleX - 1,
+      selH * displayScaleY - 1
+    );
+    ctx.restore();
+  }
+
   ctx.save();
   ctx.strokeStyle = '#4da3ff';
   ctx.lineWidth = Math.max(1, Math.floor(state.zoom / 4));
@@ -266,6 +401,7 @@ const render = () => {
 const setMode = (modeId, width, height) => {
   const mode = modes[modeId];
   if (!mode) return;
+  clearSelection();
   state.mode = mode;
   state.width = width ?? mode.width;
   state.height = height ?? mode.height;
@@ -352,6 +488,7 @@ const handleFileOpen = async (file) => {
       width: state.width,
       height: state.height,
     });
+    clearSelection();
     render();
   } catch (err) {
     if (err && err.message !== 'cancelled') {
@@ -581,6 +718,13 @@ const setupCanvasDrawing = () => {
     return { x, y };
   };
 
+  const clampPixel = (x, y) => {
+    return {
+      x: clamp(x, 0, state.width - 1),
+      y: clamp(y, 0, state.height - 1),
+    };
+  };
+
   canvas.addEventListener('contextmenu', (ev) => ev.preventDefault());
   canvas.addEventListener(
     'wheel',
@@ -597,8 +741,40 @@ const setupCanvasDrawing = () => {
   canvas.addEventListener('mousedown', (ev) => {
     if (ev.button !== 0) return;
     ev.preventDefault();
-    const { x, y } = toPixel(ev);
-    if (x < 0 || y < 0 || x >= state.width || y >= state.height) return;
+    const raw = toPixel(ev);
+    if (raw.x < 0 || raw.y < 0 || raw.x >= state.width || raw.y >= state.height)
+      return;
+    const { x, y } = clampPixel(raw.x, raw.y);
+    if (state.tool === TOOLS.SELECT) {
+      if (
+        selection.active &&
+        x >= selection.x &&
+        y >= selection.y &&
+        x < selection.x + selection.width &&
+        y < selection.y + selection.height
+      ) {
+        selection.dragging = true;
+        selection.dragStartX = x;
+        selection.dragStartY = y;
+        selection.previewX = selection.x;
+        selection.previewY = selection.y;
+        selection.mode = ev.ctrlKey ? 'copy' : 'move';
+        render();
+        return;
+      }
+      clearSelection();
+      selection.selecting = true;
+      selection.selectStartX = x;
+      selection.selectStartY = y;
+      selection.x = x;
+      selection.y = y;
+      selection.width = 1;
+      selection.height = 1;
+      selection.previewX = x;
+      selection.previewY = y;
+      render();
+      return;
+    }
     drawColor = pickColorFromEvent(ev);
     state.caretX = dragX = x;
     state.caretY = dragY = y;
@@ -618,8 +794,39 @@ const setupCanvasDrawing = () => {
   });
 
   canvas.addEventListener('mousemove', (ev) => {
+    const raw = toPixel(ev);
+    const { x, y } = clampPixel(raw.x, raw.y);
+    if (state.tool === TOOLS.SELECT) {
+      if (selection.selecting) {
+        const rect = normalizeRect(
+          selection.selectStartX,
+          selection.selectStartY,
+          x,
+          y
+        );
+        selection.x = rect.x;
+        selection.y = rect.y;
+        selection.width = rect.width;
+        selection.height = rect.height;
+        render();
+      } else if (selection.dragging) {
+        const dx = x - selection.dragStartX;
+        const dy = y - selection.dragStartY;
+        selection.previewX = clamp(
+          selection.x + dx,
+          0,
+          state.width - selection.width
+        );
+        selection.previewY = clamp(
+          selection.y + dy,
+          0,
+          state.height - selection.height
+        );
+        render();
+      }
+      return;
+    }
     if (!drawing) return;
-    const { x, y } = toPixel(ev);
     if (state.tool === TOOLS.PENCIL) {
       applyDraw(x, y, drawColor);
     } else {
@@ -661,8 +868,74 @@ const setupCanvasDrawing = () => {
     dragX = dragY = -1;
   };
 
-  window.addEventListener('mouseup', finishShape);
-  canvas.addEventListener('mouseleave', finishShape);
+  const finishSelection = (ev) => {
+    if (state.tool !== TOOLS.SELECT) return;
+    const raw = toPixel(ev);
+    const { x, y } = clampPixel(raw.x, raw.y);
+    if (selection.selecting) {
+      const rect = normalizeRect(
+        selection.selectStartX,
+        selection.selectStartY,
+        x,
+        y
+      );
+      selection.x = rect.x;
+      selection.y = rect.y;
+      selection.width = rect.width;
+      selection.height = rect.height;
+      selection.buffer = captureSelection(
+        selection.x,
+        selection.y,
+        selection.width,
+        selection.height
+      );
+      selection.active = true;
+      selection.selecting = false;
+      selection.previewX = selection.x;
+      selection.previewY = selection.y;
+      render();
+      return;
+    }
+    if (selection.dragging) {
+      selection.dragging = false;
+      const destX = selection.previewX;
+      const destY = selection.previewY;
+      if (selection.buffer && (destX !== selection.x || destY !== selection.y)) {
+        pushUndo();
+        if (selection.mode === 'move') {
+          fillRect(
+            selection.x,
+            selection.y,
+            selection.width,
+            selection.height,
+            state.bg
+          );
+        }
+        blitBuffer(
+          selection.buffer,
+          selection.width,
+          selection.height,
+          destX,
+          destY
+        );
+        selection.x = destX;
+        selection.y = destY;
+      }
+      selection.previewX = selection.x;
+      selection.previewY = selection.y;
+      selection.mode = null;
+      render();
+    }
+  };
+
+  window.addEventListener('mouseup', (ev) => {
+    finishShape(ev);
+    finishSelection(ev);
+  });
+  canvas.addEventListener('mouseleave', (ev) => {
+    finishShape(ev);
+    finishSelection(ev);
+  });
 };
 
 const moveCaretAfterDraw = (dx, dy, draw) => {
