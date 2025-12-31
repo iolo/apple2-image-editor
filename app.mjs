@@ -1,5 +1,12 @@
 import { detectMode, modes, Palette, encode, decode } from './apple2.mjs';
-import { drawLine, drawRect, drawEllipse, floodFill } from './tools.mjs';
+import {
+  drawLine,
+  drawRect,
+  drawRectFilled,
+  drawEllipse,
+  drawEllipseFilled,
+  floodFill,
+} from './tools.mjs';
 
 const canvas = document.getElementById('drawingCanvas');
 const ctx = canvas.getContext('2d');
@@ -44,7 +51,9 @@ const TOOLS = {
   PENCIL: 'pencil',
   LINE: 'line',
   RECT: 'rect',
+  RECT_FILL: 'rectFill',
   ELLIPSE: 'ellipse',
+  ELLIPSE_FILL: 'ellipseFill',
   FILL: 'fill',
 };
 
@@ -101,7 +110,8 @@ const shapePreview = {
   y1: 0,
   x2: 0,
   y2: 0,
-  color: 0,
+  strokeColor: 0,
+  fillColor: 0,
 };
 
 const clearSelection = () => {
@@ -355,7 +365,7 @@ const render = () => {
 
   if (shapePreview.active) {
     ctx.save();
-    ctx.strokeStyle = Palette.toCss(shapePreview.color);
+    ctx.strokeStyle = Palette.toCss(shapePreview.strokeColor);
     ctx.lineWidth = Math.max(1, Math.floor(state.zoom / 4));
     ctx.setLineDash([6, 4]);
     const x1 = shapePreview.x1 * displayScaleX + displayScaleX / 2;
@@ -367,20 +377,38 @@ const render = () => {
       ctx.moveTo(x1, y1);
       ctx.lineTo(x2, y2);
       ctx.stroke();
-    } else if (shapePreview.tool === TOOLS.RECT) {
+    } else if (
+      shapePreview.tool === TOOLS.RECT ||
+      shapePreview.tool === TOOLS.RECT_FILL
+    ) {
       const rect = normalizeRect(
         shapePreview.x1,
         shapePreview.y1,
         shapePreview.x2,
         shapePreview.y2
       );
+      if (shapePreview.tool === TOOLS.RECT_FILL) {
+        ctx.save();
+        ctx.globalAlpha = 0.35;
+        ctx.fillStyle = Palette.toCss(shapePreview.fillColor);
+        ctx.fillRect(
+          rect.x * displayScaleX,
+          rect.y * displayScaleY,
+          rect.width * displayScaleX,
+          rect.height * displayScaleY
+        );
+        ctx.restore();
+      }
       ctx.strokeRect(
         rect.x * displayScaleX + 0.5,
         rect.y * displayScaleY + 0.5,
         rect.width * displayScaleX - 1,
         rect.height * displayScaleY - 1
       );
-    } else if (shapePreview.tool === TOOLS.ELLIPSE) {
+    } else if (
+      shapePreview.tool === TOOLS.ELLIPSE ||
+      shapePreview.tool === TOOLS.ELLIPSE_FILL
+    ) {
       const rect = normalizeRect(
         shapePreview.x1,
         shapePreview.y1,
@@ -391,6 +419,23 @@ const render = () => {
       const top = rect.y * displayScaleY + 0.5;
       const widthPx = rect.width * displayScaleX - 1;
       const heightPx = rect.height * displayScaleY - 1;
+      if (shapePreview.tool === TOOLS.ELLIPSE_FILL) {
+        ctx.save();
+        ctx.globalAlpha = 0.35;
+        ctx.fillStyle = Palette.toCss(shapePreview.fillColor);
+        ctx.beginPath();
+        ctx.ellipse(
+          left + widthPx / 2,
+          top + heightPx / 2,
+          Math.max(0.5, widthPx / 2),
+          Math.max(0.5, heightPx / 2),
+          0,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+        ctx.restore();
+      }
       ctx.beginPath();
       ctx.ellipse(
         left + widthPx / 2,
@@ -841,7 +886,10 @@ const setupCanvasDrawing = () => {
       render();
       return;
     }
-    drawColor = pickColorFromEvent(ev);
+    drawColor =
+      state.tool === TOOLS.RECT_FILL || state.tool === TOOLS.ELLIPSE_FILL
+        ? state.fg
+        : pickColorFromEvent(ev);
     state.caretX = dragX = x;
     state.caretY = dragY = y;
     pushUndo();
@@ -859,7 +907,9 @@ const setupCanvasDrawing = () => {
     if (
       state.tool === TOOLS.LINE ||
       state.tool === TOOLS.RECT ||
-      state.tool === TOOLS.ELLIPSE
+      state.tool === TOOLS.RECT_FILL ||
+      state.tool === TOOLS.ELLIPSE ||
+      state.tool === TOOLS.ELLIPSE_FILL
     ) {
       shapePreview.active = true;
       shapePreview.tool = state.tool;
@@ -867,7 +917,8 @@ const setupCanvasDrawing = () => {
       shapePreview.y1 = y;
       shapePreview.x2 = x;
       shapePreview.y2 = y;
-      shapePreview.color = drawColor;
+      shapePreview.strokeColor = drawColor;
+      shapePreview.fillColor = state.bg;
     }
     drawing = true; // line or rect wait for mouseup
   });
@@ -948,6 +999,19 @@ const setupCanvasDrawing = () => {
         state.height
       );
       render();
+    } else if (state.tool === TOOLS.RECT_FILL) {
+      drawRectFilled(
+        dragX,
+        dragY,
+        x,
+        y,
+        state.bg,
+        state.fg,
+        setPixel,
+        state.width,
+        state.height
+      );
+      render();
     } else if (state.tool === TOOLS.ELLIPSE) {
       drawEllipse(
         dragX,
@@ -955,6 +1019,19 @@ const setupCanvasDrawing = () => {
         x,
         y,
         drawColor,
+        setPixel,
+        state.width,
+        state.height
+      );
+      render();
+    } else if (state.tool === TOOLS.ELLIPSE_FILL) {
+      drawEllipseFilled(
+        dragX,
+        dragY,
+        x,
+        y,
+        state.bg,
+        state.fg,
         setPixel,
         state.width,
         state.height

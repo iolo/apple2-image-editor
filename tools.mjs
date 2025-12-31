@@ -38,6 +38,29 @@ export const drawRect = (x0, y0, x1, y1, color, setPixel, width, height) => {
   }
 };
 
+export const drawRectFilled = (
+  x0,
+  y0,
+  x1,
+  y1,
+  fillColor,
+  borderColor,
+  setPixel,
+  width,
+  height
+) => {
+  const minX = Math.max(Math.min(x0, x1), 0);
+  const maxX = Math.min(Math.max(x0, x1), width - 1);
+  const minY = Math.max(Math.min(y0, y1), 0);
+  const maxY = Math.min(Math.max(y0, y1), height - 1);
+  for (let y = minY; y <= maxY; y += 1) {
+    for (let x = minX; x <= maxX; x += 1) {
+      setPixel(x, y, fillColor);
+    }
+  }
+  drawRect(minX, minY, maxX, maxY, borderColor, setPixel, width, height);
+};
+
 export const drawEllipse = (x0, y0, x1, y1, color, setPixel, width, height) => {
   const minX = Math.max(Math.min(x0, x1), 0);
   const maxX = Math.min(Math.max(x0, x1), width - 1);
@@ -70,6 +93,43 @@ export const drawEllipse = (x0, y0, x1, y1, color, setPixel, width, height) => {
     if (x1 >= 0 && x1 < width) setPixel(x1, y, color);
     if (x2 >= 0 && x2 < width) setPixel(x2, y, color);
   }
+};
+
+export const drawEllipseFilled = (
+  x0,
+  y0,
+  x1,
+  y1,
+  fillColor,
+  borderColor,
+  setPixel,
+  width,
+  height
+) => {
+  const minX = Math.max(Math.min(x0, x1), 0);
+  const maxX = Math.min(Math.max(x0, x1), width - 1);
+  const minY = Math.max(Math.min(y0, y1), 0);
+  const maxY = Math.min(Math.max(y0, y1), height - 1);
+  const rx = (maxX - minX) / 2;
+  const ry = (maxY - minY) / 2;
+  const cx = minX + rx;
+  const cy = minY + ry;
+
+  if (rx === 0 || ry === 0) {
+    drawLine(minX, minY, maxX, maxY, borderColor, setPixel, width, height);
+    return;
+  }
+
+  for (let y = minY; y <= maxY; y += 1) {
+    const dy = (y - cy) / ry;
+    const dx = Math.sqrt(Math.max(0, 1 - dy * dy)) * rx;
+    const x1 = Math.round(cx - dx);
+    const x2 = Math.round(cx + dx);
+    for (let x = x1; x <= x2; x += 1) {
+      if (x >= 0 && x < width) setPixel(x, y, fillColor);
+    }
+  }
+  drawEllipse(minX, minY, maxX, maxY, borderColor, setPixel, width, height);
 };
 
 export const floodFill = (sx, sy, color, getPixel, setPixel, width, height) => {
