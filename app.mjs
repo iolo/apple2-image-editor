@@ -93,6 +93,16 @@ const selection = {
   mode: null,
 };
 
+const shapePreview = {
+  active: false,
+  tool: null,
+  x1: 0,
+  y1: 0,
+  x2: 0,
+  y2: 0,
+  color: 0,
+};
+
 const clearSelection = () => {
   selection.active = false;
   selection.buffer = null;
@@ -226,6 +236,7 @@ const setTool = (tool) => {
   if (tool !== TOOLS.SELECT) {
     clearSelection();
   }
+  shapePreview.active = false;
   state.tool = tool;
   if (elements.toolButtons) {
     elements.toolButtons.querySelectorAll('[data-tool]').forEach((btn) => {
@@ -341,6 +352,37 @@ const render = () => {
     ctx.restore();
   }
 
+  if (shapePreview.active) {
+    ctx.save();
+    ctx.strokeStyle = Palette.toCss(shapePreview.color);
+    ctx.lineWidth = Math.max(1, Math.floor(state.zoom / 4));
+    ctx.setLineDash([6, 4]);
+    const x1 = shapePreview.x1 * displayScaleX + displayScaleX / 2;
+    const y1 = shapePreview.y1 * displayScaleY + displayScaleY / 2;
+    const x2 = shapePreview.x2 * displayScaleX + displayScaleX / 2;
+    const y2 = shapePreview.y2 * displayScaleY + displayScaleY / 2;
+    if (shapePreview.tool === TOOLS.LINE) {
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    } else if (shapePreview.tool === TOOLS.RECT) {
+      const rect = normalizeRect(
+        shapePreview.x1,
+        shapePreview.y1,
+        shapePreview.x2,
+        shapePreview.y2
+      );
+      ctx.strokeRect(
+        rect.x * displayScaleX + 0.5,
+        rect.y * displayScaleY + 0.5,
+        rect.width * displayScaleX - 1,
+        rect.height * displayScaleY - 1
+      );
+    }
+    ctx.restore();
+  }
+
   if (selection.selecting || selection.active) {
     const usePreview = selection.dragging && selection.active;
     const selX = usePreview ? selection.previewX : selection.x;
@@ -402,6 +444,7 @@ const setMode = (modeId, width, height) => {
   const mode = modes[modeId];
   if (!mode) return;
   clearSelection();
+  shapePreview.active = false;
   state.mode = mode;
   state.width = width ?? mode.width;
   state.height = height ?? mode.height;
@@ -790,6 +833,15 @@ const setupCanvasDrawing = () => {
       applyDraw(x, y, drawColor);
       return;
     }
+    if (state.tool === TOOLS.LINE || state.tool === TOOLS.RECT) {
+      shapePreview.active = true;
+      shapePreview.tool = state.tool;
+      shapePreview.x1 = x;
+      shapePreview.y1 = y;
+      shapePreview.x2 = x;
+      shapePreview.y2 = y;
+      shapePreview.color = drawColor;
+    }
     drawing = true; // line or rect wait for mouseup
   });
 
@@ -832,6 +884,11 @@ const setupCanvasDrawing = () => {
     } else {
       state.caretX = x;
       state.caretY = y;
+      if (shapePreview.active) {
+        shapePreview.x2 = x;
+        shapePreview.y2 = y;
+        render();
+      }
     }
   });
 
@@ -866,6 +923,7 @@ const setupCanvasDrawing = () => {
       render();
     }
     dragX = dragY = -1;
+    shapePreview.active = false;
   };
 
   const finishSelection = (ev) => {
