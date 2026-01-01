@@ -19,7 +19,7 @@
           <input
             id="fileInput"
             type="file"
-            accept=".gr,.dgr,.hgr,.dhgr,.pixmap,.bitmap"
+            accept=".gr,.dgr,.hgr,.dhgr,.pixmap,.bitmap,.png,.jpg,.jpeg,.webp,.gif,.bmp"
             hidden
           />
         </div>
@@ -260,6 +260,61 @@
         <menu class="dialog-actions">
           <button value="cancel" type="reset">Cancel</button>
           <button value="ok" type="submit">OK</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog id="importDialog">
+      <form method="dialog" id="importForm" class="dialog-form">
+        <header>
+          <h3>Import image</h3>
+        </header>
+        <p class="muted" id="importInfo">Source image size.</p>
+        <label>
+          Mode
+          <select id="importModeSelect" name="mode">
+            <option value="gr">GR (Lo-Res, 40x48)</option>
+            <option value="dgr">DGR (Double Lo-Res, 80x48)</option>
+            <option value="hgrColor">HGR Color (Hi-Res, 140x192)</option>
+            <option value="hgrMono">HGR Mono (Hi-Res, 280x192)</option>
+            <option value="dhgrColor">
+              DHGR Color (Double Hi-Res, 140x192)
+            </option>
+            <option value="dhgrMono">DHGR Mono (Double Hi-Res, 560x192)</option>
+            <option value="pixmap">
+              Pixmap (custom size, 256 colors, .PIXMAP)
+            </option>
+            <option value="bitmap">
+              Bitmap (custom size, 2 colors, .BITMAP)
+            </option>
+          </select>
+        </label>
+        <div class="dimensions">
+          <label>
+            Width
+            <input
+              id="importWidth"
+              name="width"
+              type="number"
+              min="1"
+              value="40"
+            />
+          </label>
+          <label>
+            Height
+            <input
+              id="importHeight"
+              name="height"
+              type="number"
+              min="1"
+              value="48"
+            />
+          </label>
+        </div>
+        <p class="muted">Image will be scaled to the target size.</p>
+        <menu class="dialog-actions">
+          <button value="cancel" type="reset">Cancel</button>
+          <button value="ok" type="submit">Import</button>
         </menu>
       </form>
     </dialog>

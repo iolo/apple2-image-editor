@@ -1,4 +1,5 @@
 import { detectMode, modes, Palette, encode, decode } from './apple2.mjs';
+import { quantizeImageData } from './convert.mjs';
 import {
   drawLine,
   drawRect,
@@ -40,6 +41,12 @@ const elements = {
   dimensionForm: document.getElementById('dimensionForm'),
   dimWidth: document.getElementById('dimWidth'),
   dimHeight: document.getElementById('dimHeight'),
+  importDialog: document.getElementById('importDialog'),
+  importForm: document.getElementById('importForm'),
+  importModeSelect: document.getElementById('importModeSelect'),
+  importWidth: document.getElementById('importWidth'),
+  importHeight: document.getElementById('importHeight'),
+  importInfo: document.getElementById('importInfo'),
   gridToggle: document.getElementById('gridToggle'),
   hgrModeSelect: document.getElementById('hgrModeSelect'),
   dhgrModeSelect: document.getElementById('dhgrModeSelect'),
@@ -82,6 +89,9 @@ const state = {
 
 let pendingDimensionResolve = null;
 let pendingDimensionReject = null;
+let pendingImportResolve = null;
+let pendingImportReject = null;
+let pendingImportSource = null;
 
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
@@ -548,6 +558,24 @@ const updateDimensionInputs = () => {
   }
 };
 
+const updateImportDimensionInputs = () => {
+  const mode = modes[elements.importModeSelect.value];
+  const fixed = mode.width && mode.height;
+  if (fixed) {
+    elements.importWidth.value = mode.width;
+    elements.importHeight.value = mode.height;
+    elements.importWidth.disabled = true;
+    elements.importHeight.disabled = true;
+  } else {
+    elements.importWidth.disabled = false;
+    elements.importHeight.disabled = false;
+    if (pendingImportSource) {
+      elements.importWidth.value = pendingImportSource.width;
+      elements.importHeight.value = pendingImportSource.height;
+    }
+  }
+};
+
 const openNewDialog = () => {
   updateDimensionInputs();
   elements.newDialog.showModal();
@@ -560,6 +588,19 @@ const requestDimensions = (width, height) =>
     elements.dimWidth.value = width ?? 16;
     elements.dimHeight.value = height ?? 16;
     elements.dimensionDialog.showModal();
+  });
+
+const requestImportOptions = (fileName, width, height) =>
+  new Promise((resolve, reject) => {
+    pendingImportResolve = resolve;
+    pendingImportReject = reject;
+    pendingImportSource = { width, height };
+    if (elements.importInfo) {
+      elements.importInfo.textContent = `${fileName} (${width} x ${height}px)`;
+    }
+    elements.importModeSelect.value = state.mode?.id ?? 'gr';
+    updateImportDimensionInputs();
+    elements.importDialog.showModal();
   });
 
 const handleNewSubmit = (ev) => {
@@ -583,22 +624,32 @@ const handleFileOpen = async (file) => {
   try {
     const buffer = await file.arrayBuffer();
     const mode = detectMode(file.name, buffer.byteLength);
-    if (!mode) {
-      throw new Error('Could not detect file format');
+    if (mode) {
+      if (!mode.width || !mode.height) {
+        const { width, height } = await requestDimensions(
+          mode.width,
+          mode.height
+        );
+        setMode(mode.id, width, height);
+      } else if (mode.id !== state.mode.id) {
+        setMode(mode.id);
+      }
+      state.pixels = decode(state.mode, state.palette, buffer, {
+        width: state.width,
+        height: state.height,
+      });
+      clearSelection();
+      render();
+      return;
     }
-    if (!mode.width || !mode.height) {
-      const { width, height } = await requestDimensions(
-        mode.width,
-        mode.height
-      );
-      setMode(mode.id, width, height);
-    } else if (mode.id !== state.mode.id) {
-      setMode(mode.id);
-    }
-    state.pixels = decode(state.mode, state.palette, buffer, {
-      width: state.width,
-      height: state.height,
-    });
+
+    const { image, width, height, release } = await loadImageFromFile(file);
+    const { modeId, width: outWidth, height: outHeight } =
+      await requestImportOptions(file.name, width, height);
+    setMode(modeId, outWidth, outHeight);
+    const imageData = rasterizeImage(image, state.width, state.height);
+    state.pixels = quantizeImageData(imageData, state.palette);
+    if (release) release();
     clearSelection();
     render();
   } catch (err) {
@@ -620,6 +671,52 @@ const getExtension = (filename) => {
   const match = filename.match(/\.([^.]+)$/);
   return match ? match[1].toLowerCase() : '';
 };
+
+const loadImageFromFile = async (file) => {
+  if (window.createImageBitmap) {
+    try {
+      const bitmap = await window.createImageBitmap(file);
+      return {
+        image: bitmap,
+        width: bitmap.width,
+        height: bitmap.height,
+        release: () => bitmap.close?.(),
+      };
+    } catch (err) {
+      console.warn('createImageBitmap failed, falling back to Image.', err);
+    }
+  }
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve({
+        image: img,
+        width: img.naturalWidth,
+        height: img.naturalHeight,
+        release: null,
+      });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Could not decode image'));
+    };
+    img.src = url;
+  });
+};
+
+const rasterizeImage = (image, width, height) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.clearRect(0, 0, width, height);
+  ctx.drawImage(image, 0, 0, width, height);
+  return ctx.getImageData(0, 0, width, height);
+};
+
 
 const pixelsToBlob = (mimeType) =>
   new Promise((resolve, reject) => {
@@ -806,6 +903,45 @@ const setupDialogs = () => {
     pendingDimensionResolve = null;
     pendingDimensionReject = null;
   });
+
+  if (elements.importModeSelect) {
+    elements.importModeSelect.addEventListener(
+      'change',
+      updateImportDimensionInputs
+    );
+  }
+  if (elements.importForm) {
+    elements.importForm.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      const modeId = elements.importModeSelect.value;
+      const width = parseInt(elements.importWidth.value, 10);
+      const height = parseInt(elements.importHeight.value, 10);
+      elements.importDialog.close();
+      if (pendingImportResolve) {
+        pendingImportResolve({ modeId, width, height });
+      }
+      pendingImportResolve = null;
+      pendingImportReject = null;
+      pendingImportSource = null;
+    });
+    elements.importForm.addEventListener('reset', () => {
+      elements.importDialog.close();
+      if (pendingImportReject) pendingImportReject(new Error('cancelled'));
+      pendingImportResolve = null;
+      pendingImportReject = null;
+      pendingImportSource = null;
+    });
+  }
+  if (elements.importDialog) {
+    elements.importDialog.addEventListener('cancel', (ev) => {
+      ev.preventDefault();
+      elements.importDialog.close();
+      if (pendingImportReject) pendingImportReject(new Error('cancelled'));
+      pendingImportResolve = null;
+      pendingImportReject = null;
+      pendingImportSource = null;
+    });
+  }
 };
 
 const setupCanvasDrawing = () => {
