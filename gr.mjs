@@ -1,4 +1,4 @@
-export const COLORS = [
+export const GR_COLORS = [
   0x000000, // 0000 black
   0xac124c, // 0001 red
   0x000783, // 0010 dkblue
@@ -16,6 +16,26 @@ export const COLORS = [
   0x6ceeb2, // 1110 aqua
   0xffffff, // 1111 white
 ];
+
+export const COLORS = GR_COLORS;
+
+const clampByte = (value) => Math.max(0, Math.min(255, value));
+
+const makeTintPalette = (colors, tint) =>
+  colors.map((color) => {
+    const r = (color >> 16) & 0xff;
+    const g = (color >> 8) & 0xff;
+    const b = color & 0xff;
+    const luma = Math.round(0.2126 * r + 0.7152 * g + 0.0722 * b);
+    const tr = clampByte(Math.round(luma * tint[0]));
+    const tg = clampByte(Math.round(luma * tint[1]));
+    const tb = clampByte(Math.round(luma * tint[2]));
+    return (tr << 16) | (tg << 8) | tb;
+  });
+
+export const GR_GRAY_COLORS = makeTintPalette(GR_COLORS, [1, 1, 1]);
+export const GR_GREEN_COLORS = makeTintPalette(GR_COLORS, [0.2, 1, 0.2]);
+export const GR_AMBER_COLORS = makeTintPalette(GR_COLORS, [1, 0.75, 0.2]);
 
 export const TEXT_OFFSET = [
   0x0000, 0x0080, 0x0100, 0x0180, 0x0200, 0x0280, 0x0300, 0x0380, 0x0028,
@@ -51,3 +71,35 @@ export function getPixel(fb, x, y) {
   // even row -> low nibble
   return byte & 0x0f;
 }
+
+const baseView = {
+  width: 40,
+  height: 48,
+  scaleX: 2,
+  setPixel,
+  getPixel,
+};
+
+export const grColor = {
+  name: 'Color',
+  palette: GR_COLORS,
+  ...baseView,
+};
+
+export const grGray = {
+  name: 'Gray',
+  palette: GR_GRAY_COLORS,
+  ...baseView,
+};
+
+export const grGreen = {
+  name: 'Green',
+  palette: GR_GREEN_COLORS,
+  ...baseView,
+};
+
+export const grAmber = {
+  name: 'Amber',
+  palette: GR_AMBER_COLORS,
+  ...baseView,
+};

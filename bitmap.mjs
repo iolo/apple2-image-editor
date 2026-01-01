@@ -54,3 +54,10 @@ export function getPixel(fb, x, y) {
   //const mask = 1 << (index & 7);
   return fb[offset] & mask ? 1 : 0;
 }
+
+export const bitmapView = {
+  name: 'Mono',
+  palette: COLORS,
+  setPixel,
+  getPixel,
+};

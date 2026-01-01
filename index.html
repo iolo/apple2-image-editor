@@ -244,6 +244,15 @@
               </svg>
             </button>
           </div>
+          <div class="tool-row view-row">
+            <label for="viewToolSelect">View</label>
+            <select id="viewToolSelect" name="view">
+              <option value="color">Color</option>
+              <option value="mono">Mono</option>
+              <option value="green">Green</option>
+              <option value="amber">Amber</option>
+            </select>
+          </div>
           <div class="tool-row color-preview">
             <div>
               <div class="swatch fg" id="fgPreview">
@@ -304,14 +313,10 @@
         <label>
           Mode
           <select id="modeSelect" name="mode">
-            <option value="gr">GR (Lo-Res, 40x48)</option>
-            <option value="dgr">DGR (Double Lo-Res, 80x48)</option>
-            <option value="hgrColor">HGR Color (Hi-Res, 140x192)</option>
-            <option value="hgrMono">HGR Mono (Hi-Res, 280x192)</option>
-            <option value="dhgrColor">
-              DHGR Color (Double Hi-Res, 140x192)
-            </option>
-            <option value="dhgrMono">DHGR Mono (Double Hi-Res, 560x192)</option>
+            <option value="gr">GR (Lo-Res)</option>
+            <option value="dgr">DGR (Double Lo-Res)</option>
+            <option value="hgr">HGR (Hi-Res)</option>
+            <option value="dhgr">DHGR (Double Hi-Res)</option>
             <option value="pixmap">
               Pixmap (custom size, 256 colors, .PIXMAP)
             </option>
@@ -357,20 +362,6 @@
         <label class="inline">
           <input type="checkbox" id="prefGrid" checked />
           Show grid when zoom ≥ 4
-        </label>
-        <label class="inline">
-          HGR (Hi-Res) mode
-          <select id="hgrModeSelect">
-            <option value="hgrColor">Color (140x192)</option>
-            <option value="hgrMono">Mono (280x192)</option>
-          </select>
-        </label>
-        <label class="inline">
-          DHGR (Double Hi-Res) mode
-          <select id="dhgrModeSelect">
-            <option value="dhgrColor">Color (140x192)</option>
-            <option value="dhgrMono">Mono (560x192)</option>
-          </select>
         </label>
         <label>
           Default zoom
@@ -457,14 +448,10 @@
         <label>
           Mode
           <select id="importModeSelect" name="mode">
-            <option value="gr">GR (Lo-Res, 40x48)</option>
-            <option value="dgr">DGR (Double Lo-Res, 80x48)</option>
-            <option value="hgrColor">HGR Color (Hi-Res, 140x192)</option>
-            <option value="hgrMono">HGR Mono (Hi-Res, 280x192)</option>
-            <option value="dhgrColor">
-              DHGR Color (Double Hi-Res, 140x192)
-            </option>
-            <option value="dhgrMono">DHGR Mono (Double Hi-Res, 560x192)</option>
+            <option value="gr">GR (Lo-Res)</option>
+            <option value="dgr">DGR (Double Lo-Res)</option>
+            <option value="hgr">HGR (Hi-Res)</option>
+            <option value="dhgr">DHGR (Double Hi-Res)</option>
             <option value="pixmap">
               Pixmap (custom size, 256 colors, .PIXMAP)
             </option>

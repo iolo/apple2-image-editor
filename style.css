@@ -149,6 +149,19 @@ button:active {
   flex-wrap: wrap;
 }
 
+.tool-row label {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.tool-row select {
+  background: #0b0f18;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+}
+
 .tool-row.color-preview {
   align-items: center;
 }

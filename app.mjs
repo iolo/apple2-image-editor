@@ -1,4 +1,4 @@
-import { detectMode, modes, Palette, encode, decode } from './apple2.mjs';
+import { detectMode, modes, Palette, encode } from './apple2.mjs';
 import { quantizeImageData, ditherFloydSteinberg } from './convert.mjs';
 import {
   drawLine,
@@ -49,8 +49,7 @@ const elements = {
   importHeight: document.getElementById('importHeight'),
   importDitherSelect: document.getElementById('importDitherSelect'),
   importInfo: document.getElementById('importInfo'),
-  hgrModeSelect: document.getElementById('hgrModeSelect'),
-  dhgrModeSelect: document.getElementById('dhgrModeSelect'),
+  viewToolSelect: document.getElementById('viewToolSelect'),
   toolButtons: document.getElementById('toolButtons'),
 };
 
@@ -71,6 +70,10 @@ const MAX_ZOOM = 24;
 
 const state = {
   mode: null,
+  view: null,
+  viewId: null,
+  viewPrefs: {},
+  fb: null,
   pixels: null,
   width: 0,
   height: 0,
@@ -100,6 +103,56 @@ const DITHERING = {
 
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
+const getViewIds = (mode) => Object.keys(mode.views ?? {});
+const getDefaultViewId = (modeId) => {
+  const mode = modes[modeId];
+  if (!mode) return null;
+  return (
+    state.viewPrefs[modeId] ?? mode.defaultView ?? getViewIds(mode)[0] ?? null
+  );
+};
+
+const getModeDefaultViewId = (modeId) => {
+  const mode = modes[modeId];
+  if (!mode) return null;
+  return mode.defaultView ?? getViewIds(mode)[0] ?? null;
+};
+
+const getView = (mode, viewId) => {
+  if (!mode) return null;
+  return (
+    mode.views?.[viewId] ??
+    mode.views?.[mode.defaultView] ??
+    mode.views?.[getViewIds(mode)[0]] ??
+    null
+  );
+};
+
+const getViewDimensions = (mode, view) => ({
+  width: view?.width ?? mode?.width ?? null,
+  height: view?.height ?? mode?.height ?? null,
+});
+
+const populateViewSelect = (select, modeId, viewId) => {
+  if (!select) return;
+  const mode = modes[modeId];
+  if (!mode) return;
+  select.textContent = '';
+  getViewIds(mode).forEach((id) => {
+    const view = mode.views[id];
+    const option = document.createElement('option');
+    option.value = id;
+    option.textContent = view?.name ?? id;
+    select.appendChild(option);
+  });
+  const selected = viewId ?? getDefaultViewId(modeId);
+  if (selected) {
+    select.value = selected;
+    if (select.value !== selected) {
+      select.value = getViewIds(mode)[0] ?? '';
+    }
+  }
+};
 const selection = {
   active: false,
   x: 0,
@@ -165,15 +218,17 @@ const blitBuffer = (buffer, srcWidth, srcHeight, destX, destY) => {
 
   const srcOffsetX = startX - destX;
   const srcOffsetY = startY - destY;
-  const copyWidth = endX - startX;
-
   for (let row = 0; row < endY - startY; row += 1) {
-    const srcRow = (srcOffsetY + row) * srcWidth + srcOffsetX;
-    const destRow = (startY + row) * state.width + startX;
-    const srcStart = srcRow * 4;
-    const srcEnd = (srcRow + copyWidth) * 4;
-    const destStart = destRow * 4;
-    state.pixels.set(buffer.subarray(srcStart, srcEnd), destStart);
+    for (let col = 0; col < endX - startX; col += 1) {
+      const srcX = srcOffsetX + col;
+      const srcY = srcOffsetY + row;
+      const srcOffset = (srcY * srcWidth + srcX) * 4;
+      const r = buffer[srcOffset];
+      const g = buffer[srcOffset + 1];
+      const b = buffer[srcOffset + 2];
+      const color = Palette.fromRgb(r, g, b);
+      setPixel(startX + col, startY + row, color);
+    }
   }
 };
 
@@ -184,14 +239,9 @@ const fillRect = (x, y, width, height, color) => {
   const endY = Math.min(state.height, y + height);
   if (endX <= startX || endY <= startY) return;
 
-  const [r, g, b] = Palette.toRgb(color);
   for (let row = startY; row < endY; row += 1) {
     for (let col = startX; col < endX; col += 1) {
-      const offset = (row * state.width + col) * 4;
-      state.pixels[offset] = r;
-      state.pixels[offset + 1] = g;
-      state.pixels[offset + 2] = b;
-      state.pixels[offset + 3] = 255;
+      setPixel(col, row, color);
     }
   }
 };
@@ -262,29 +312,20 @@ const refreshColorPreview = () => {
   elements.bgPreview.title = `${bgCss} (${Palette.toRgb(state.bg).join(',')})`;
 };
 
-const isHgrMode = (modeId) => modeId === 'hgrColor' || modeId === 'hgrMono';
-const isDhgrMode = (modeId) => modeId === 'dhgrColor' || modeId === 'dhgrMono';
-
 const updateToolbox = () => {
-  if (elements.hgrModeSelect) {
-    const active = isHgrMode(state.mode.id);
-    elements.hgrModeSelect.disabled = !active;
-    if (active) {
-      elements.hgrModeSelect.value = state.mode.id;
-    }
-  }
-
-  if (elements.dhgrModeSelect) {
-    const active = isDhgrMode(state.mode.id);
-    elements.dhgrModeSelect.disabled = !active;
-    if (active) {
-      elements.dhgrModeSelect.value = state.mode.id;
-    }
+  if (elements.viewToolSelect && state.mode) {
+    populateViewSelect(
+      elements.viewToolSelect,
+      state.mode.id,
+      state.viewId ?? getDefaultViewId(state.mode.id)
+    );
+    elements.viewToolSelect.disabled = getViewIds(state.mode).length <= 1;
   }
 };
 
 const updateStatus = () => {
-  elements.modeInfo.textContent = `${state.mode.name} ${state.width}x${state.height}`;
+  const viewName = state.view?.name ? ` ${state.view.name}` : '';
+  elements.modeInfo.textContent = `${state.mode.name}${viewName} ${state.width}x${state.height}`;
   elements.zoomInfo.textContent = `Zoom ${state.zoom}x · ${state.tool}`;
   elements.cursorPos.textContent = `(${state.caretX}, ${state.caretY})`;
 };
@@ -304,14 +345,31 @@ const setTool = (tool) => {
 };
 
 const pushUndo = () => {
-  if (!state.pixels) return;
-  state.undo.push(new Uint8Array(state.pixels));
+  if (!state.fb) return;
+  state.undo.push(new Uint8Array(state.fb));
   if (state.undo.length > 50) state.undo.shift();
   state.redo.length = 0;
 };
 
-const restorePixels = (pixels) => {
-  state.pixels = pixels;
+const decodeFromFb = (fb, width, height) => {
+  const pixels = new Uint8Array(width * height * 4);
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const index = state.view.getPixel(fb, x, y);
+      const [r, g, b] = Palette.toRgb(state.palette.getColor(index));
+      const offset = (y * width + x) * 4;
+      pixels[offset] = r;
+      pixels[offset + 1] = g;
+      pixels[offset + 2] = b;
+      pixels[offset + 3] = 255;
+    }
+  }
+  return pixels;
+};
+
+const restoreFromFb = (fb) => {
+  state.fb = fb;
+  state.pixels = decodeFromFb(state.fb, state.width, state.height);
   clearSelection();
   render();
 };
@@ -319,15 +377,15 @@ const restorePixels = (pixels) => {
 const undo = () => {
   if (!state.undo.length) return;
   const snapshot = state.undo.pop();
-  state.redo.push(new Uint8Array(state.pixels));
-  restorePixels(snapshot);
+  state.redo.push(new Uint8Array(state.fb));
+  restoreFromFb(snapshot);
 };
 
 const redo = () => {
   if (!state.redo.length) return;
   const snapshot = state.redo.pop();
-  state.undo.push(new Uint8Array(state.pixels));
-  restorePixels(snapshot);
+  state.undo.push(new Uint8Array(state.fb));
+  restoreFromFb(snapshot);
 };
 
 const setPixel = (x, y, color) => {
@@ -337,6 +395,10 @@ const setPixel = (x, y, color) => {
   state.pixels[offset + 1] = g;
   state.pixels[offset + 2] = b;
   state.pixels[offset + 3] = 255; // opaque
+  if (state.fb && state.view) {
+    const index = state.palette.getIndex(color);
+    state.view.setPixel(state.fb, x, y, index);
+  }
 };
 
 const getPixel = (x, y) => {
@@ -554,38 +616,81 @@ const render = () => {
   updateStatus();
 };
 
-const setMode = (modeId, width, height) => {
+const setMode = (modeId, viewId, width, height, buffer) => {
   const mode = modes[modeId];
   if (!mode) return;
+  const resolvedViewId = viewId ?? getDefaultViewId(modeId);
+  const view = getView(mode, resolvedViewId);
+  if (!view) return;
+  const fixed = getViewDimensions(mode, view);
+  const resolvedWidth = fixed.width ?? width ?? state.width;
+  const resolvedHeight = fixed.height ?? height ?? state.height;
+  if (!resolvedWidth || !resolvedHeight) return;
+
   clearSelection();
   shapePreview.active = false;
   state.mode = mode;
-  state.width = width ?? mode.width;
-  state.height = height ?? mode.height;
-  state.scaleX = mode.scaleX ?? 1;
-  state.scaleY = mode.scaleY ?? 1;
-  state.palette = new Palette(mode.COLORS);
+  state.view = view;
+  state.viewId = resolvedViewId;
+  state.viewPrefs[modeId] = resolvedViewId;
+  state.width = resolvedWidth;
+  state.height = resolvedHeight;
+  state.scaleX = view.scaleX ?? mode.scaleX ?? 1;
+  state.scaleY = view.scaleY ?? mode.scaleY ?? 1;
+  state.palette = new Palette(view.palette);
   state.fg = state.palette.getColor(state.palette.length - 1);
   state.bg = state.palette.getColor(0);
   state.undo = [];
   state.redo = [];
   state.caretX = clamp(state.caretX, 0, state.width - 1);
   state.caretY = clamp(state.caretY, 0, state.height - 1);
-  state.pixels = decode(state.mode, state.palette, null, {
-    width: state.width,
-    height: state.height,
-  });
+  state.fb = mode.init(state.width, state.height);
+  if (buffer) {
+    state.fb.set(new Uint8Array(buffer));
+  }
+  state.pixels = decodeFromFb(state.fb, state.width, state.height);
+  updatePalette();
+  updateToolbox();
+  render();
+};
+
+const switchView = (modeId, viewId) => {
+  state.viewPrefs[modeId] = viewId;
+  if (state.mode?.id !== modeId) return;
+  const view = getView(state.mode, viewId);
+  if (!view) return;
+  clearSelection();
+  shapePreview.active = false;
+  state.view = view;
+  state.viewId = viewId;
+  state.scaleX = view.scaleX ?? state.mode.scaleX ?? 1;
+  state.scaleY = view.scaleY ?? state.mode.scaleY ?? 1;
+  const viewSize = getViewDimensions(state.mode, view);
+  if (viewSize.width && viewSize.height) {
+    state.width = viewSize.width;
+    state.height = viewSize.height;
+  }
+  state.palette = new Palette(view.palette);
+  state.fg = state.palette.getColor(state.palette.length - 1);
+  state.bg = state.palette.getColor(0);
+  state.caretX = clamp(state.caretX, 0, state.width - 1);
+  state.caretY = clamp(state.caretY, 0, state.height - 1);
+  if (state.fb) {
+    state.pixels = decodeFromFb(state.fb, state.width, state.height);
+  }
   updatePalette();
   updateToolbox();
   render();
 };
 
 const updateDimensionInputs = () => {
-  const mode = modes[elements.modeSelect.value];
-  const fixed = mode.width && mode.height;
-  if (fixed) {
-    elements.widthInput.value = mode.width;
-    elements.heightInput.value = mode.height;
+  const modeId = elements.modeSelect.value;
+  const mode = modes[modeId];
+  const view = getView(mode, getModeDefaultViewId(modeId));
+  const fixed = getViewDimensions(mode, view);
+  if (fixed.width && fixed.height) {
+    elements.widthInput.value = fixed.width;
+    elements.heightInput.value = fixed.height;
     elements.widthInput.disabled = true;
     elements.heightInput.disabled = true;
   } else {
@@ -595,11 +700,13 @@ const updateDimensionInputs = () => {
 };
 
 const updateImportDimensionInputs = () => {
-  const mode = modes[elements.importModeSelect.value];
-  const fixed = mode.width && mode.height;
-  if (fixed) {
-    elements.importWidth.value = mode.width;
-    elements.importHeight.value = mode.height;
+  const modeId = elements.importModeSelect.value;
+  const mode = modes[modeId];
+  const view = getView(mode, getDefaultViewId(modeId));
+  const fixed = getViewDimensions(mode, view);
+  if (fixed.width && fixed.height) {
+    elements.importWidth.value = fixed.width;
+    elements.importHeight.value = fixed.height;
     elements.importWidth.disabled = true;
     elements.importHeight.disabled = true;
   } else {
@@ -634,7 +741,8 @@ const requestImportOptions = (fileName, width, height) =>
     if (elements.importInfo) {
       elements.importInfo.textContent = `${fileName} (${width} x ${height}px)`;
     }
-    elements.importModeSelect.value = state.mode?.id ?? 'gr';
+    const modeId = state.mode?.id ?? 'gr';
+    elements.importModeSelect.value = modeId;
     if (elements.importDitherSelect) {
       elements.importDitherSelect.value = DITHERING.NONE;
     }
@@ -645,10 +753,11 @@ const requestImportOptions = (fileName, width, height) =>
 const handleNewSubmit = (ev) => {
   ev.preventDefault();
   const modeId = elements.modeSelect.value;
+  const viewId = getModeDefaultViewId(modeId);
   const width = parseInt(elements.widthInput.value, 10);
   const height = parseInt(elements.heightInput.value, 10);
   elements.newDialog.close();
-  setMode(modeId, width, height);
+  setMode(modeId, viewId, width, height);
   zoomToFit();
 };
 
@@ -665,19 +774,22 @@ const handleFileOpen = async (file) => {
     const buffer = await file.arrayBuffer();
     const mode = detectMode(file.name, buffer.byteLength);
     if (mode) {
-      if (!mode.width || !mode.height) {
+      const viewId = getModeDefaultViewId(mode.id);
+      const view = getView(mode, viewId);
+      const fixed = getViewDimensions(mode, view);
+      if (!fixed.width || !fixed.height) {
         const { width, height } = await requestDimensions(
-          mode.width,
-          mode.height
+          fixed.width,
+          fixed.height
         );
-        setMode(mode.id, width, height);
-      } else if (mode.id !== state.mode.id) {
-        setMode(mode.id);
+        setMode(mode.id, viewId, width, height, buffer);
+      } else if (mode.id !== state.mode.id || state.viewId !== viewId) {
+        setMode(mode.id, viewId, fixed.width, fixed.height, buffer);
+      } else {
+        state.fb = mode.init(state.width, state.height);
+        state.fb.set(new Uint8Array(buffer));
+        state.pixels = decodeFromFb(state.fb, state.width, state.height);
       }
-      state.pixels = decode(state.mode, state.palette, buffer, {
-        width: state.width,
-        height: state.height,
-      });
       clearSelection();
       zoomToFit();
       return;
@@ -686,17 +798,22 @@ const handleFileOpen = async (file) => {
     const { image, width, height, release } = await loadImageFromFile(file);
     const {
       modeId,
+      viewId,
       width: outWidth,
       height: outHeight,
       dithering,
     } = await requestImportOptions(file.name, width, height);
-    setMode(modeId, outWidth, outHeight);
+    setMode(modeId, viewId, outWidth, outHeight);
     const imageData = rasterizeImage(image, state.width, state.height);
     if (dithering === DITHERING.FLOYD) {
       state.pixels = ditherFloydSteinberg(imageData, state.palette);
     } else {
       state.pixels = quantizeImageData(imageData, state.palette);
     }
+    state.fb = encode(state.mode, state.view, state.palette, state.pixels, {
+      width: state.width,
+      height: state.height,
+    });
     if (release) release();
     clearSelection();
     zoomToFit();
@@ -791,10 +908,12 @@ const buildSaveBlob = async (ext) => {
   if (mimeType) {
     return pixelsToBlob(mimeType);
   }
-  const payload = encode(state.mode, state.palette, state.pixels, {
-    width: state.width,
-    height: state.height,
-  });
+  const payload =
+    state.fb ??
+    encode(state.mode, state.view, state.palette, state.pixels, {
+      width: state.width,
+      height: state.height,
+    });
   return new Blob([payload], { type: 'application/octet-stream' });
 };
 
@@ -882,25 +1001,11 @@ const setupToolbar = () => {
     .getElementById('zoomFit')
     .addEventListener('click', () => zoomToFit());
 
-  if (elements.hgrModeSelect) {
-    elements.hgrModeSelect.addEventListener('change', (ev) => {
-      const mode = ev.target.value;
-      if (!isHgrMode(mode)) return;
-      const payload = encode(state.mode, state.palette, state.pixels);
-      setMode(mode);
-      state.pixels = decode(state.mode, state.palette, payload);
-      render();
-    });
-  }
-
-  if (elements.dhgrModeSelect) {
-    elements.dhgrModeSelect.addEventListener('change', (ev) => {
-      const mode = ev.target.value;
-      if (!isDhgrMode(mode)) return;
-      const payload = encode(state.mode, state.palette, state.pixels);
-      setMode(mode);
-      state.pixels = decode(state.mode, state.palette, payload);
-      render();
+  if (elements.viewToolSelect) {
+    elements.viewToolSelect.addEventListener('change', (ev) => {
+      if (state.mode) {
+        switchView(state.mode.id, ev.target.value);
+      }
     });
   }
 
@@ -918,7 +1023,9 @@ const setupToolbar = () => {
 };
 
 const setupDialogs = () => {
-  elements.modeSelect.addEventListener('change', updateDimensionInputs);
+  elements.modeSelect.addEventListener('change', () => {
+    updateDimensionInputs();
+  });
   elements.newForm.addEventListener('submit', handleNewSubmit);
   elements.newForm.addEventListener('reset', () => elements.newDialog.close());
 
@@ -952,21 +1059,21 @@ const setupDialogs = () => {
   });
 
   if (elements.importModeSelect) {
-    elements.importModeSelect.addEventListener(
-      'change',
-      updateImportDimensionInputs
-    );
+    elements.importModeSelect.addEventListener('change', () => {
+      updateImportDimensionInputs();
+    });
   }
   if (elements.importForm) {
     elements.importForm.addEventListener('submit', (ev) => {
       ev.preventDefault();
       const modeId = elements.importModeSelect.value;
+      const viewId = getModeDefaultViewId(modeId);
       const width = parseInt(elements.importWidth.value, 10);
       const height = parseInt(elements.importHeight.value, 10);
       const dithering = elements.importDitherSelect?.value ?? DITHERING.NONE;
       elements.importDialog.close();
       if (pendingImportResolve) {
-        pendingImportResolve({ modeId, width, height, dithering });
+        pendingImportResolve({ modeId, viewId, width, height, dithering });
       }
       pendingImportResolve = null;
       pendingImportReject = null;

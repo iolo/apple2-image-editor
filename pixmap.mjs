@@ -70,3 +70,10 @@ export function getPixel(fb, x, y) {
   const offset = pixelOffset(x, y);
   return fb[offset];
 }
+
+export const pixmapView = {
+  name: 'Color',
+  palette: COLORS,
+  setPixel,
+  getPixel,
+};

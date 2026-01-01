@@ -1,6 +1,10 @@
-export { COLORS } from './gr.mjs';
-
-import { TEXT_OFFSET } from './gr.mjs';
+import {
+  GR_AMBER_COLORS,
+  GR_COLORS,
+  GR_GRAY_COLORS,
+  GR_GREEN_COLORS,
+  TEXT_OFFSET,
+} from './gr.mjs';
 
 // ((color << 1) & 0x0f) | (color >> 3);
 export const MAIN_TO_AUX_COLORS = [
@@ -41,3 +45,34 @@ export function getPixel(fb, x, y) {
   const color = y & 1 ? (byte >> 4) & 0x0f : byte & 0x0f;
   return x & 1 ? color : AUX_TO_MAIN_COLORS[color];
 }
+
+const baseView = {
+  width: 80,
+  height: 48,
+  setPixel,
+  getPixel,
+};
+
+export const dgrColor = {
+  name: 'Color',
+  palette: GR_COLORS,
+  ...baseView,
+};
+
+export const dgrGray = {
+  name: 'Gray',
+  palette: GR_GRAY_COLORS,
+  ...baseView,
+};
+
+export const dgrGreen = {
+  name: 'Green',
+  palette: GR_GREEN_COLORS,
+  ...baseView,
+};
+
+export const dgrAmber = {
+  name: 'Amber',
+  palette: GR_AMBER_COLORS,
+  ...baseView,
+};

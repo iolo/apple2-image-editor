@@ -1,9 +1,7 @@
 import * as gr from './gr.mjs';
 import * as dgr from './dgr.mjs';
-import * as hgrColor from './hgr-color.mjs';
-import * as hgrMono from './hgr-mono.mjs';
-import * as dhgrColor from './dhgr-color.mjs';
-import * as dhgrMono from './dhgr-mono.mjs';
+import * as hgr from './hgr.mjs';
+import * as dhgr from './dhgr.mjs';
 import * as pixmap from './pixmap.mjs';
 import * as bitmap from './bitmap.mjs';
 
@@ -11,63 +9,79 @@ export const modes = {
   gr: {
     id: 'gr',
     name: 'Lo-Res',
-    width: 40,
-    height: 48,
     ext: 'GR',
     size: 0x400,
-    scaleX: 2,
-    ...gr,
+    init: gr.init,
+    views: {
+      color: gr.grColor,
+      gray: gr.grGray,
+      green: gr.grGreen,
+      amber: gr.grAmber,
+    },
+    defaultView: 'color',
   },
   dgr: {
     id: 'dgr',
     name: 'Double Lo-Res',
-    width: 80,
-    height: 48,
     ext: 'DGR',
     size: 0x800,
-    ...dgr,
+    init: dgr.init,
+    views: {
+      color: dgr.dgrColor,
+      gray: dgr.dgrGray,
+      green: dgr.dgrGreen,
+      amber: dgr.dgrAmber,
+    },
+    defaultView: 'color',
   },
-  hgrColor: {
-    id: 'hgrColor',
-    name: 'Hi-Res Color',
-    width: 140,
-    height: 192,
+  hgr: {
+    id: 'hgr',
+    name: 'Hi-Res',
     ext: 'HGR',
     size: 0x2000,
-    scaleX: 2,
-    ...hgrColor,
+    init: hgr.init,
+    views: {
+      color: hgr.hgrColor,
+      mono: hgr.hgrMono,
+      green: hgr.hgrGreen,
+      amber: hgr.hgrAmber,
+    },
+    defaultView: 'color',
   },
-  hgrMono: {
-    id: 'hgrMono',
-    name: 'Hi-Res Mono',
-    width: 280,
-    height: 192,
-    ext: 'HGR',
-    size: 0x2000,
-    ...hgrMono,
-  },
-  dhgrColor: {
-    id: 'dhgrColor',
-    name: 'Double Hi-Res Color',
-    width: 140,
-    height: 192,
+  dhgr: {
+    id: 'dhgr',
+    name: 'Double Hi-Res',
     ext: 'DHGR',
     size: 0x4000,
-    scaleX: 2,
-    ...dhgrColor,
+    init: dhgr.init,
+    views: {
+      color: dhgr.dhgrColor,
+      mono: dhgr.dhgrMono,
+      green: dhgr.dhgrGreen,
+      amber: dhgr.dhgrAmber,
+    },
+    defaultView: 'color',
   },
-  dhgrMono: {
-    id: 'dhgrMono',
-    name: 'Double Hi-Res Mono',
-    width: 560,
-    height: 192,
-    ext: 'DHGR',
-    size: 0x4000,
-    scaleY: 2,
-    ...dhgrMono,
+  pixmap: {
+    id: 'pixmap',
+    name: 'Pixmap',
+    ext: 'PIXMAP',
+    init: pixmap.init,
+    views: {
+      color: pixmap.pixmapView,
+    },
+    defaultView: 'color',
   },
-  pixmap: { id: 'pixmap', name: 'Pixmap', ext: 'PIXMAP', ...pixmap },
-  bitmap: { id: 'bitmap', name: 'Bitmap', ext: 'BITMAP', ...bitmap },
+  bitmap: {
+    id: 'bitmap',
+    name: 'Bitmap',
+    ext: 'BITMAP',
+    init: bitmap.init,
+    views: {
+      mono: bitmap.bitmapView,
+    },
+    defaultView: 'mono',
+  },
 };
 
 export class Palette {
@@ -109,9 +123,9 @@ export function detectMode(name, size) {
 }
 
 // mode specific buffer to RGBA array
-export function decode(mode, palette, buffer, opts) {
-  const width = opts?.width ?? mode.width;
-  const height = opts?.height ?? mode.height;
+export function decode(mode, view, palette, buffer, opts) {
+  const width = opts?.width ?? view.width ?? mode.width;
+  const height = opts?.height ?? view.height ?? mode.height;
   const pixels = new Uint8Array(width * height * 4);
   const fb = mode.init(width, height, buffer);
   if (buffer) {
@@ -119,7 +133,7 @@ export function decode(mode, palette, buffer, opts) {
   }
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
-      const index = mode.getPixel(fb, x, y);
+      const index = view.getPixel(fb, x, y);
       const [r, g, b] = Palette.toRgb(palette.getColor(index));
       const offset = (y * width + x) * 4;
       pixels[offset] = r;
@@ -132,9 +146,9 @@ export function decode(mode, palette, buffer, opts) {
 }
 
 // RGBA array to mode specific buffer
-export function encode(mode, palette, pixels, opts) {
-  const width = opts?.width ?? mode.width;
-  const height = opts?.height ?? mode.height;
+export function encode(mode, view, palette, pixels, opts) {
+  const width = opts?.width ?? view.width ?? mode.width;
+  const height = opts?.height ?? view.height ?? mode.height;
   const fb = mode.init(width, height);
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
@@ -143,7 +157,7 @@ export function encode(mode, palette, pixels, opts) {
       const g = pixels[offset + 1];
       const b = pixels[offset + 2];
       const index = palette.getIndex(Palette.fromRgb(r, g, b));
-      mode.setPixel(fb, x, y, index);
+      view.setPixel(fb, x, y, index);
     }
   }
   return fb;

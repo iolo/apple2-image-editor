@@ -1,7 +1,7 @@
 // Apple II HGR support 6 colors with complex restrictions.
 // for consistency & simplicity, make it 3 bits per pixel(MSB, even, odd)
 // prettier-ignore
-export const COLORS = [
+const HGR_COLORS = [
     0x000000, // 000 BLACK
     0x38cb00, // 001 GREEN
     0xc734ff, // 010 PURPLE
@@ -10,6 +10,21 @@ export const COLORS = [
     0xf25e00, // 101 ORANGE
     0x0da1ff, // 110 BLUE
     0xffffff, // 111 WHITE
+];
+
+const HGR_MONO_COLORS = [
+  0x000000, // black
+  0xffffff, // white
+];
+
+const HGR_GREEN_COLORS = [
+  0x000000, // black
+  0x38cb00, // green
+];
+
+const HGR_AMBER_COLORS = [
+  0x000000, // black
+  0xf25e00, // amber
 ];
 
 // HGR memory layout:
@@ -90,12 +105,12 @@ export function init() {
 }
 
 // 0..139 -> 0..39
-function pixelOffset(x, y) {
+function pixelOffsetColor(x, y) {
   return HGR_OFFSET[y] + HGR_OFFSET_X[x];
 }
 
-export function setPixel(fb, x, y, color) {
-  const offset = pixelOffset(x, y);
+function setColorPixel(fb, x, y, color) {
+  const offset = pixelOffsetColor(x, y);
   const byte0 = fb[offset];
   const byte1 = fb[offset + 1];
 
@@ -130,8 +145,8 @@ export function setPixel(fb, x, y, color) {
   }
 }
 
-export function getPixel(fb, x, y) {
-  const offset = pixelOffset(x, y);
+function getColorPixel(fb, x, y) {
+  const offset = pixelOffsetColor(x, y);
   const byte0 = fb[offset];
   const byte1 = fb[offset + 1];
 
@@ -155,3 +170,63 @@ export function getPixel(fb, x, y) {
       return pal1 | ((byte1 & 0b00100000) >> 4) | ((byte1 & 0b01000000) >> 6);
   }
 }
+
+// 0..279 -> 0..39
+function pixelOffsetMono(x, y) {
+  return HGR_OFFSET[y] + Math.floor(x / 7);
+}
+
+function pixelBitMask(x) {
+  return 1 << (x % 7);
+}
+
+function setMonoPixel(fb, x, y, color) {
+  const offset = pixelOffsetMono(x, y);
+  const mask = pixelBitMask(x);
+  if (color & 1) {
+    fb[offset] |= mask;
+  } else {
+    fb[offset] &= ~mask;
+  }
+}
+
+function getMonoPixel(fb, x, y) {
+  const offset = pixelOffsetMono(x, y);
+  const mask = pixelBitMask(x);
+  return fb[offset] & mask ? 1 : 0;
+}
+
+export const hgrColor = {
+  name: 'Color',
+  width: 140,
+  height: 192,
+  scaleX: 2,
+  palette: HGR_COLORS,
+  setPixel: setColorPixel,
+  getPixel: getColorPixel,
+};
+
+const monoView = {
+  width: 280,
+  height: 192,
+  setPixel: setMonoPixel,
+  getPixel: getMonoPixel,
+};
+
+export const hgrMono = {
+  name: 'Mono',
+  palette: HGR_MONO_COLORS,
+  ...monoView,
+};
+
+export const hgrGreen = {
+  name: 'Green',
+  palette: HGR_GREEN_COLORS,
+  ...monoView,
+};
+
+export const hgrAmber = {
+  name: 'Amber',
+  palette: HGR_AMBER_COLORS,
+  ...monoView,
+};
