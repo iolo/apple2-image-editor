@@ -27,18 +27,40 @@
 
       <main class="app-main">
         <section class="panel toolbox" aria-label="Drawing toolbox">
-          <header class="panel-header">
-            <h2>Toolbox</h2>
-          </header>
           <div class="tool-row">
-            <button id="swapColors" type="button" title="Swap colors (S)">
-              Swap
+            <button
+              id="undoButton"
+              type="button"
+              title="Undo (Ctrl+Z)"
+              aria-label="Undo"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M7 8H3l4-4m0 4h8a6 6 0 1 1-6 6"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
             </button>
-            <button id="undoButton" type="button" title="Undo (Ctrl+Z)">
-              Undo
-            </button>
-            <button id="redoButton" type="button" title="Redo (Ctrl+Y)">
-              Redo
+            <button
+              id="redoButton"
+              type="button"
+              title="Redo (Ctrl+Y)"
+              aria-label="Redo"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M17 8h4l-4-4m0 4H9a6 6 0 1 0 6 6"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
             </button>
           </div>
           <div
@@ -47,97 +69,230 @@
             role="group"
             aria-label="Tools"
           >
-            <button type="button" data-tool="select">Select</button>
-            <button type="button" data-tool="pencil" class="active">
-              Pencil
+            <button
+              type="button"
+              data-tool="select"
+              title="Select"
+              aria-label="Select"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M5 3l10 10-4 1-3 6-1-4-4-2z"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linejoin="round"
+                />
+              </svg>
             </button>
-            <button type="button" data-tool="line">Line</button>
-            <button type="button" data-tool="rect">Rect</button>
-            <button type="button" data-tool="rectFill">Rect Fill</button>
-            <button type="button" data-tool="ellipse">Ellipse</button>
-            <button type="button" data-tool="ellipseFill">Ellipse Fill</button>
-            <button type="button" data-tool="fill">Fill</button>
-          </div>
-          <div class="tool-row">
-            <button id="zoomOut" type="button" title="Zoom out (-)">-</button>
-            <button id="zoomIn" type="button" title="Zoom in (+)">+</button>
-            <button id="zoomFit" type="button" title="Zoom to fit (0)">
-              Fit
+            <button
+              type="button"
+              data-tool="pencil"
+              class="active"
+              title="Pencil"
+              aria-label="Pencil"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
             </button>
-            <label class="inline">
-              <input id="gridToggle" type="checkbox" checked />
-              Pixel grid
-            </label>
+            <button
+              type="button"
+              data-tool="line"
+              title="Line"
+              aria-label="Line"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M5 19L19 5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </button>
+            <button
+              type="button"
+              data-tool="rect"
+              title="Rect"
+              aria-label="Rect"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect
+                  x="5"
+                  y="6"
+                  width="14"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+              </svg>
+            </button>
+            <button
+              type="button"
+              data-tool="rectFill"
+              title="Rect fill"
+              aria-label="Rect fill"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="5" y="6" width="14" height="12" fill="currentColor" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              data-tool="ellipse"
+              title="Ellipse"
+              aria-label="Ellipse"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <ellipse
+                  cx="12"
+                  cy="12"
+                  rx="7"
+                  ry="5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+              </svg>
+            </button>
+            <button
+              type="button"
+              data-tool="ellipseFill"
+              title="Ellipse fill"
+              aria-label="Ellipse fill"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <ellipse cx="12" cy="12" rx="7" ry="5" fill="currentColor" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              data-tool="fill"
+              title="Fill"
+              aria-label="Fill"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M7 4l6 6-6 6-3-3 6-6-3-3zM16 18h4"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
           </div>
           <div class="tool-row">
-            <label class="inline">
-              HGR (Hi-Res) mode
-              <select id="hgrModeSelect">
-                <option value="hgrColor">Color (140x192)</option>
-                <option value="hgrMono">Mono (280x192)</option>
-              </select>
-            </label>
-          </div>
-          <div class="tool-row">
-            <label class="inline">
-              DHGR (Double Hi-Res) mode
-              <select id="dhgrModeSelect">
-                <option value="dhgrColor">Color (140x192)</option>
-                <option value="dhgrMono">Mono (560x192)</option>
-              </select>
-            </label>
+            <button
+              id="zoomOut"
+              type="button"
+              title="Zoom out (-)"
+              aria-label="Zoom out"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M5 12h14"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </button>
+            <button
+              id="zoomIn"
+              type="button"
+              title="Zoom in (+)"
+              aria-label="Zoom in"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 5v14M5 12h14"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </button>
+            <button
+              id="zoomFit"
+              type="button"
+              title="Zoom to fit (0)"
+              aria-label="Zoom to fit"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
           </div>
           <div class="tool-row color-preview">
             <div>
-              <div class="swatch-label">FG</div>
-              <div class="swatch fg" id="fgPreview"></div>
+              <div class="swatch fg" id="fgPreview">
+                <span class="label">FG</span>
+              </div>
             </div>
+            <button
+              id="swapColors"
+              type="button"
+              title="Swap colors (S)"
+              aria-label="Swap colors"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M7 7h10l-3-3m3 3-3 3M17 17H7l3 3m-3-3 3-3"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
             <div>
-              <div class="swatch-label">BG</div>
-              <div class="swatch bg" id="bgPreview"></div>
+              <div class="swatch bg" id="bgPreview">
+                <span class="label">BG</span>
+              </div>
             </div>
-          </div>
-          <div class="tool-row caret-row">
-            <span>Cursor:</span>
-            <span id="cursorPos">(0, 0)</span>
           </div>
         </section>
 
         <section class="panel drawing-area" aria-label="Drawing area">
-          <header class="panel-header">
-            <h2>Drawing Area</h2>
-            <div class="status">
-              <span id="modeInfo">—</span>
-              <span id="zoomInfo">—</span>
-            </div>
-          </header>
           <div class="canvas-wrapper" id="canvasWrapper">
             <canvas id="drawingCanvas" width="560" height="192"></canvas>
           </div>
         </section>
 
         <section class="panel palette" aria-label="Color palette">
-          <header class="panel-header">
-            <h2>Palette</h2>
-            <div class="palette-meta" id="paletteMeta"></div>
-          </header>
           <div class="swatch-grid" id="paletteGrid"></div>
         </section>
       </main>
 
       <footer class="app-footer">
-        <span>© 2025</span>
-        <nav>
-          <a href="https://iolo.kr" target="_blank" rel="noreferrer noopener"
-            >Home</a
-          >
-          <a
-            href="https://github.com/iolo/apple2-image-editor"
-            target="_blank"
-            rel="noreferrer noopener"
-            >GitHub</a
-          >
-        </nav>
+        <div class="status">
+          <span id="modeInfo">—</span>
+          <span id="zoomInfo">—</span>
+          <span id="paletteMeta">—</span>
+          <span id="cursorPos">(0, 0)</span>
+        </div>
       </footer>
     </div>
 
@@ -203,6 +358,20 @@
           <input type="checkbox" id="prefGrid" checked />
           Show grid when zoom ≥ 4
         </label>
+        <label class="inline">
+          HGR (Hi-Res) mode
+          <select id="hgrModeSelect">
+            <option value="hgrColor">Color (140x192)</option>
+            <option value="hgrMono">Mono (280x192)</option>
+          </select>
+        </label>
+        <label class="inline">
+          DHGR (Double Hi-Res) mode
+          <select id="dhgrModeSelect">
+            <option value="dhgrColor">Color (140x192)</option>
+            <option value="dhgrMono">Mono (560x192)</option>
+          </select>
+        </label>
         <label>
           Default zoom
           <input type="number" id="prefZoom" min="1" max="24" value="8" />
@@ -219,11 +388,23 @@
         <header>
           <h3>About</h3>
         </header>
+        <p>Simple image editor for Apple II Grachis modes.</p>
         <p>
-          Simple image editor for Apple II GR (Lo-Res), DGR (Double Lo-Res), HGR
-          (Hi-Res), and DHGR (Double Hi-Res) graphics.
+          GR (Lo-Res), DGR (Double Lo-Res), HGR (Hi-Res), and DHGR (Double
+          Hi-Res) graphics.
         </p>
         <p>No server. No transpiler. Just HTML, CSS, and JavaScript.</p>
+        <nav class="dialog-links">
+          <a href="https://iolo.kr" target="_blank" rel="noreferrer noopener"
+            >Home</a
+          >
+          <a
+            href="https://github.com/iolo/apple2-image-editor"
+            target="_blank"
+            rel="noreferrer noopener"
+            >GitHub</a
+          >
+        </nav>
         <menu class="dialog-actions">
           <button value="ok" type="submit">Close</button>
         </menu>

@@ -49,7 +49,6 @@ const elements = {
   importHeight: document.getElementById('importHeight'),
   importDitherSelect: document.getElementById('importDitherSelect'),
   importInfo: document.getElementById('importInfo'),
-  gridToggle: document.getElementById('gridToggle'),
   hgrModeSelect: document.getElementById('hgrModeSelect'),
   dhgrModeSelect: document.getElementById('dhgrModeSelect'),
   toolButtons: document.getElementById('toolButtons'),
@@ -204,8 +203,14 @@ const setZoom = (value) => {
 
 const centerCanvasInView = () => {
   if (!elements.canvasWrapper) return;
-  const maxLeft = Math.max(0, canvas.width - elements.canvasWrapper.clientWidth);
-  const maxTop = Math.max(0, canvas.height - elements.canvasWrapper.clientHeight);
+  const maxLeft = Math.max(
+    0,
+    canvas.width - elements.canvasWrapper.clientWidth
+  );
+  const maxTop = Math.max(
+    0,
+    canvas.height - elements.canvasWrapper.clientHeight
+  );
   elements.canvasWrapper.scrollLeft = Math.max(0, maxLeft / 2);
   elements.canvasWrapper.scrollTop = Math.max(0, maxTop / 2);
 };
@@ -229,6 +234,7 @@ const updatePalette = () => {
     btn.type = 'button';
     btn.className = 'swatch-button';
     btn.style.background = Palette.toCss(color);
+    btn.title = `${Palette.toCss(color)} (${Palette.toRgb(color).join(',')})`;
     const label = document.createElement('span');
     label.className = 'label';
     label.textContent = index.toString(16).toUpperCase();
@@ -248,8 +254,12 @@ const updatePalette = () => {
 };
 
 const refreshColorPreview = () => {
-  elements.fgPreview.style.background = Palette.toCss(state.fg);
-  elements.bgPreview.style.background = Palette.toCss(state.bg);
+  const fgCss = Palette.toCss(state.fg);
+  const bgCss = Palette.toCss(state.bg);
+  elements.fgPreview.style.background = fgCss;
+  elements.bgPreview.style.background = bgCss;
+  elements.fgPreview.title = `${fgCss} (${Palette.toRgb(state.fg).join(',')})`;
+  elements.bgPreview.title = `${bgCss} (${Palette.toRgb(state.bg).join(',')})`;
 };
 
 const isHgrMode = (modeId) => modeId === 'hgrColor' || modeId === 'hgrMono';
@@ -274,7 +284,7 @@ const updateToolbox = () => {
 };
 
 const updateStatus = () => {
-  elements.modeInfo.textContent = `${state.mode.name} ${state.width}x${state.height} (.${state.mode.ext})`;
+  elements.modeInfo.textContent = `${state.mode.name} ${state.width}x${state.height}`;
   elements.zoomInfo.textContent = `Zoom ${state.zoom}x · ${state.tool}`;
   elements.cursorPos.textContent = `(${state.caretX}, ${state.caretY})`;
 };
@@ -674,8 +684,12 @@ const handleFileOpen = async (file) => {
     }
 
     const { image, width, height, release } = await loadImageFromFile(file);
-    const { modeId, width: outWidth, height: outHeight, dithering } =
-      await requestImportOptions(file.name, width, height);
+    const {
+      modeId,
+      width: outWidth,
+      height: outHeight,
+      dithering,
+    } = await requestImportOptions(file.name, width, height);
     setMode(modeId, outWidth, outHeight);
     const imageData = rasterizeImage(image, state.width, state.height);
     if (dithering === DITHERING.FLOYD) {
@@ -750,7 +764,6 @@ const rasterizeImage = (image, width, height) => {
   ctx.drawImage(image, 0, 0, width, height);
   return ctx.getImageData(0, 0, width, height);
 };
-
 
 const pixelsToBlob = (mimeType) =>
   new Promise((resolve, reject) => {
@@ -842,9 +855,11 @@ const setupToolbar = () => {
     .getElementById('openButton')
     .addEventListener('click', () => elements.fileInput.click());
   document.getElementById('saveButton').addEventListener('click', saveFile);
-  document
-    .getElementById('settingsButton')
-    .addEventListener('click', () => elements.settingsDialog.showModal());
+  document.getElementById('settingsButton').addEventListener('click', () => {
+    elements.prefGrid.checked = state.showGrid;
+    elements.prefZoom.value = state.zoom;
+    elements.settingsDialog.showModal();
+  });
   document
     .getElementById('aboutButton')
     .addEventListener('click', () => elements.aboutDialog.showModal());
@@ -866,11 +881,6 @@ const setupToolbar = () => {
   document
     .getElementById('zoomFit')
     .addEventListener('click', () => zoomToFit());
-
-  elements.gridToggle.addEventListener('change', (ev) => {
-    state.showGrid = ev.target.checked;
-    render();
-  });
 
   if (elements.hgrModeSelect) {
     elements.hgrModeSelect.addEventListener('change', (ev) => {
@@ -1248,7 +1258,10 @@ const setupCanvasDrawing = () => {
       selection.dragging = false;
       const destX = selection.previewX;
       const destY = selection.previewY;
-      if (selection.buffer && (destX !== selection.x || destY !== selection.y)) {
+      if (
+        selection.buffer &&
+        (destX !== selection.x || destY !== selection.y)
+      ) {
         pushUndo();
         if (selection.mode === 'move') {
           fillRect(
