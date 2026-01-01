@@ -32,13 +32,11 @@ Simple image editor for Apple II.
 - `style.css`: layout and visual design.
 - `app.mjs`: UI wiring, state, rendering, and interactions.
 - `tools.mjs`: drawing helpers (line, rectangle, flood fill).
-- `modes.mjs`: barrel that exports Apple II mode helpers and handlers.
-- `gr.mjs`: GR (Lo-Res) mode handler. 40x48 16 colors.
-- `dgr.mjs`: DGR (Double Lo-Res) mode handler. 80x48 16 colors.
-- `hgr.mjs`: HGR (Hi-Res) color mode handler. 140x192 6 colors.
-- `hgr-mono.mjs`: HGR (Hi-Res) monochrome mode handler. 280x192 2 colors.
-- `dhgr-color.mjs`: DHGR (Double Hi-Res) color mode handler. 140x192 16 colors.
-- `dhgr-mono.mjs`: DHGR (Double Hi-Res) monochrome mode handler. 560x192 2 colors.
+- `apple2.mjs`: mode registry, palette helpers, and encode/decode utilities.
+- `gr.mjs`: GR (Lo-Res) mode views (palettes and layout).
+- `dgr.mjs`: DGR (Double Lo-Res) mode views (palettes and layout).
+- `hgr.mjs`: HGR (Hi-Res) mode views (color/mono variants).
+- `dhgr.mjs`: DHGR (Double Hi-Res) mode views (color/mono variants).
 - `pixmap.mjs`: generic pixmap handler. 8 bits per pixel.
 - `bitmap.mjs`: generic bitmap handler. 1 bits per pixel.
 
@@ -130,6 +128,16 @@ Simple image editor for Apple II.
     - no header; length must be `(width / 8) * height` bytes
 - file open: upload without server
 - file save: download without server
+
+## docs
+
+- `docs/architecture-overview.md`: high-level architecture and data flow.
+- `docs/module-map.md`: module responsibilities and exports.
+- `docs/rendering-input-pipeline.md`: rendering and input flow.
+- `docs/file-io-and-serialization.md`: file open/import/save behavior.
+- `docs/state-management-undo-redo.md`: state model and undo/redo.
+- `docs/modes-and-views.md`: mode/view model and per-mode view definitions.
+- `docs/framebuffer-modes.md`: framebuffer layouts and pixel packing.
 
 # see also
 
