@@ -61,6 +61,9 @@
           <div class="tool-row">
             <button id="zoomOut" type="button" title="Zoom out (-)">-</button>
             <button id="zoomIn" type="button" title="Zoom in (+)">+</button>
+            <button id="zoomFit" type="button" title="Zoom to fit (0)">
+              Fit
+            </button>
             <label class="inline">
               <input id="gridToggle" type="checkbox" checked />
               Pixel grid
@@ -108,7 +111,7 @@
               <span id="zoomInfo">—</span>
             </div>
           </header>
-          <div class="canvas-wrapper">
+          <div class="canvas-wrapper" id="canvasWrapper">
             <canvas id="drawingCanvas" width="560" height="192"></canvas>
           </div>
         </section>

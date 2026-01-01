@@ -37,6 +37,7 @@ const elements = {
   modeInfo: document.getElementById('modeInfo'),
   zoomInfo: document.getElementById('zoomInfo'),
   cursorPos: document.getElementById('cursorPos'),
+  canvasWrapper: document.getElementById('canvasWrapper'),
   dimensionDialog: document.getElementById('dimensionDialog'),
   dimensionForm: document.getElementById('dimensionForm'),
   dimWidth: document.getElementById('dimWidth'),
@@ -199,6 +200,26 @@ const fillRect = (x, y, width, height, color) => {
 const setZoom = (value) => {
   state.zoom = clamp(value, MIN_ZOOM, MAX_ZOOM);
   render();
+};
+
+const centerCanvasInView = () => {
+  if (!elements.canvasWrapper) return;
+  const maxLeft = Math.max(0, canvas.width - elements.canvasWrapper.clientWidth);
+  const maxTop = Math.max(0, canvas.height - elements.canvasWrapper.clientHeight);
+  elements.canvasWrapper.scrollLeft = Math.max(0, maxLeft / 2);
+  elements.canvasWrapper.scrollTop = Math.max(0, maxTop / 2);
+};
+
+const zoomToFit = () => {
+  if (!elements.canvasWrapper) return;
+  const availableWidth = elements.canvasWrapper.clientWidth;
+  const availableHeight = elements.canvasWrapper.clientHeight;
+  if (availableWidth <= 0 || availableHeight <= 0) return;
+  const zoomX = Math.floor(availableWidth / (state.width * state.scaleX));
+  const zoomY = Math.floor(availableHeight / (state.height * state.scaleY));
+  const fitZoom = Math.max(1, Math.min(zoomX, zoomY));
+  setZoom(clamp(fitZoom, MIN_ZOOM, MAX_ZOOM));
+  requestAnimationFrame(centerCanvasInView);
 };
 
 const updatePalette = () => {
@@ -618,6 +639,7 @@ const handleNewSubmit = (ev) => {
   const height = parseInt(elements.heightInput.value, 10);
   elements.newDialog.close();
   setMode(modeId, width, height);
+  zoomToFit();
 };
 
 const handleSettingsSubmit = (ev) => {
@@ -647,7 +669,7 @@ const handleFileOpen = async (file) => {
         height: state.height,
       });
       clearSelection();
-      render();
+      zoomToFit();
       return;
     }
 
@@ -663,7 +685,7 @@ const handleFileOpen = async (file) => {
     }
     if (release) release();
     clearSelection();
-    render();
+    zoomToFit();
   } catch (err) {
     if (err && err.message !== 'cancelled') {
       alert(`Open failed: ${err.message}`);
@@ -841,6 +863,9 @@ const setupToolbar = () => {
   document
     .getElementById('zoomOut')
     .addEventListener('click', () => setZoom(state.zoom - 1));
+  document
+    .getElementById('zoomFit')
+    .addEventListener('click', () => zoomToFit());
 
   elements.gridToggle.addEventListener('change', (ev) => {
     state.showGrid = ev.target.checked;
@@ -1332,6 +1357,10 @@ const handleKeyboard = () => {
         break;
       case '-':
         setZoom(ev.ctrlKey ? MIN_ZOOM : state.zoom - 1);
+        ev.preventDefault();
+        break;
+      case '0':
+        zoomToFit();
         ev.preventDefault();
         break;
       default:
