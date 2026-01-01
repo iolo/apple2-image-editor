@@ -1,5 +1,5 @@
 import { detectMode, modes, Palette, encode, decode } from './apple2.mjs';
-import { quantizeImageData } from './convert.mjs';
+import { quantizeImageData, ditherFloydSteinberg } from './convert.mjs';
 import {
   drawLine,
   drawRect,
@@ -46,6 +46,7 @@ const elements = {
   importModeSelect: document.getElementById('importModeSelect'),
   importWidth: document.getElementById('importWidth'),
   importHeight: document.getElementById('importHeight'),
+  importDitherSelect: document.getElementById('importDitherSelect'),
   importInfo: document.getElementById('importInfo'),
   gridToggle: document.getElementById('gridToggle'),
   hgrModeSelect: document.getElementById('hgrModeSelect'),
@@ -92,6 +93,10 @@ let pendingDimensionReject = null;
 let pendingImportResolve = null;
 let pendingImportReject = null;
 let pendingImportSource = null;
+const DITHERING = {
+  NONE: 'none',
+  FLOYD: 'floyd',
+};
 
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
@@ -599,6 +604,9 @@ const requestImportOptions = (fileName, width, height) =>
       elements.importInfo.textContent = `${fileName} (${width} x ${height}px)`;
     }
     elements.importModeSelect.value = state.mode?.id ?? 'gr';
+    if (elements.importDitherSelect) {
+      elements.importDitherSelect.value = DITHERING.NONE;
+    }
     updateImportDimensionInputs();
     elements.importDialog.showModal();
   });
@@ -644,11 +652,15 @@ const handleFileOpen = async (file) => {
     }
 
     const { image, width, height, release } = await loadImageFromFile(file);
-    const { modeId, width: outWidth, height: outHeight } =
+    const { modeId, width: outWidth, height: outHeight, dithering } =
       await requestImportOptions(file.name, width, height);
     setMode(modeId, outWidth, outHeight);
     const imageData = rasterizeImage(image, state.width, state.height);
-    state.pixels = quantizeImageData(imageData, state.palette);
+    if (dithering === DITHERING.FLOYD) {
+      state.pixels = ditherFloydSteinberg(imageData, state.palette);
+    } else {
+      state.pixels = quantizeImageData(imageData, state.palette);
+    }
     if (release) release();
     clearSelection();
     render();
@@ -916,9 +928,10 @@ const setupDialogs = () => {
       const modeId = elements.importModeSelect.value;
       const width = parseInt(elements.importWidth.value, 10);
       const height = parseInt(elements.importHeight.value, 10);
+      const dithering = elements.importDitherSelect?.value ?? DITHERING.NONE;
       elements.importDialog.close();
       if (pendingImportResolve) {
-        pendingImportResolve({ modeId, width, height });
+        pendingImportResolve({ modeId, width, height, dithering });
       }
       pendingImportResolve = null;
       pendingImportReject = null;
