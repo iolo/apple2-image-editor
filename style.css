@@ -70,7 +70,7 @@ button {
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 0.45rem 0.75rem;
+  padding: 0.45rem;
   cursor: pointer;
   transition:
     background 0.15s,
@@ -89,7 +89,7 @@ button:active {
 
 .app-main {
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-columns: 200px minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr) auto;
   overflow: hidden;
   min-height: 0;
@@ -162,28 +162,13 @@ button:active {
   border-radius: 6px;
 }
 
-.tool-row.color-preview {
-  align-items: center;
-}
-
-.tool-row.color-preview .swatch {
-  width: 36px;
-  height: 36px;
-  border-radius: 6px;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.28);
-}
-
-.tool-row.color-preview button {
-  width: 36px;
-  height: 36px;
-  padding: 0;
-}
-
 .tool-row button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
+  width: 36px;
+  height: 36px;
 }
 
 .tool-row button svg {
@@ -194,10 +179,6 @@ button:active {
 .tools button.active {
   border-color: var(--accent);
   background: rgba(77, 163, 255, 0.16);
-}
-
-.color-preview {
-  justify-content: space-between;
 }
 
 .swatch {
@@ -279,7 +260,6 @@ button:active {
   display: flex;
   gap: 0.5rem;
   overflow-x: auto;
-  padding-bottom: 0.25rem;
 }
 
 .swatch-button {

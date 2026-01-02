@@ -76,12 +76,16 @@
               aria-label="Select"
             >
               <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M5 3l10 10-4 1-3 6-1-4-4-2z"
+                <rect
+                  x="2"
+                  y="2"
+                  width="20"
+                  height="20"
                   fill="none"
                   stroke="currentColor"
+                  stroke-dasharray="1,3"
+                  stroke-linecap="round"
                   stroke-width="2"
-                  stroke-linejoin="round"
                 />
               </svg>
             </button>
@@ -254,10 +258,8 @@
             </select>
           </div>
           <div class="tool-row color-preview">
-            <div>
-              <div class="swatch fg" id="fgPreview">
-                <span class="label">FG</span>
-              </div>
+            <div class="swatch-button fg" id="fgPreview">
+              <span class="label">FG</span>
             </div>
             <button
               id="swapColors"
@@ -276,10 +278,8 @@
                 />
               </svg>
             </button>
-            <div>
-              <div class="swatch bg" id="bgPreview">
-                <span class="label">BG</span>
-              </div>
+            <div class="swatch-button bg" id="bgPreview">
+              <span class="label">BG</span>
             </div>
           </div>
         </section>
