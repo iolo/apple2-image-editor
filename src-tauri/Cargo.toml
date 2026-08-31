@@ -1,0 +1,20 @@
+[package]
+name = "apple2-image-editor"
+version = "1.0.0"
+description = "Simple image editor for Apple II"
+authors = ["Dongsu Jang <iolo@kakao.com>"]
+license = "MIT"
+repository = "https://github.com/iolo/apple2-image-editor"
+edition = "2021"
+
+[lib]
+name = "apple2_image_editor_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+rfd = "0.17"
+serde = { version = "1", features = ["derive"] }
+tauri = { version = "2", features = [] }

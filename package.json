@@ -16,12 +16,18 @@
   "main": "app.mjs",
   "scripts": {
     "start": "npx serve",
+    "dev:desktop-web": "serve . -l 1420 --no-clipboard",
+    "build:desktop-web": "node scripts/prepare-tauri.mjs",
+    "tauri": "tauri",
+    "desktop:dev": "tauri dev",
+    "desktop:build": "tauri build",
     "test": "node smoke-check.mjs",
     "test:e2e": "node e2e-test.mjs",
     "lint": "npx eslint .",
     "prettier": "npx prettier -w ."
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0",
     "@eslint/js": "^9.39.2",
     "@playwright/test": "^1.57.0",
     "eslint": "^9.39.2",

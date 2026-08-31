@@ -19,6 +19,19 @@ This document summarizes the responsibilities and key exports of each module.
   - Coordinates modes, views, framebuffer, and RGBA rendering.
   - Handles input, tools, selection, undo/redo, zoom, and grid.
   - Implements file open/save and import flow.
+- `desktop.mjs`
+  - Detects the Tauri host and invokes its native file commands.
+  - Adapts native file bytes to the browser `File` interface used by the app.
+
+## Desktop Host
+
+- `src-tauri/src/lib.rs`
+  - Starts the Tauri application.
+  - Implements native open, save-path, and write commands.
+- `src-tauri/tauri.conf.json`
+  - Defines the desktop window, static frontend build, bundle metadata, and icons.
+- `scripts/prepare-tauri.mjs`
+  - Copies the static web assets into `dist/` without transpiling or bundling.
 
 ## Mode + View Registry
 

@@ -8,6 +8,12 @@ import {
   drawEllipseFilled,
   floodFill,
 } from './tools.mjs';
+import {
+  chooseNativeSavePath,
+  isTauri,
+  openNativeFile,
+  writeNativeFile,
+} from './desktop.mjs';
 
 const canvas = document.getElementById('drawingCanvas');
 const ctx = canvas.getContext('2d');
@@ -920,6 +926,13 @@ const buildSaveBlob = async (ext) => {
 const saveFile = async () => {
   try {
     const defaultName = `image.${state.mode.ext.toLowerCase()}`;
+    if (isTauri()) {
+      const path = await chooseNativeSavePath(defaultName);
+      if (!path) return;
+      const blob = await buildSaveBlob(getExtension(path));
+      await writeNativeFile(path, new Uint8Array(await blob.arrayBuffer()));
+      return;
+    }
     if (window.showSaveFilePicker) {
       const handle = await window.showSaveFilePicker({
         suggestedName: defaultName,
@@ -972,7 +985,19 @@ const setupToolbar = () => {
   document.getElementById('newButton').addEventListener('click', openNewDialog);
   document
     .getElementById('openButton')
-    .addEventListener('click', () => elements.fileInput.click());
+    .addEventListener('click', async () => {
+      if (!isTauri()) {
+        elements.fileInput.click();
+        return;
+      }
+      try {
+        const file = await openNativeFile();
+        if (file) await handleFileOpen(file);
+      } catch (err) {
+        alert(`Open failed: ${err.message}`);
+        console.error(err);
+      }
+    });
   document.getElementById('saveButton').addEventListener('click', saveFile);
   document.getElementById('settingsButton').addEventListener('click', () => {
     elements.prefGrid.checked = state.showGrid;

@@ -18,12 +18,17 @@ This document describes the high-level architecture and data flow of
   `bitmap.mjs`): framebuffer layout + view definitions.
 - Codec (`apple2.mjs`): mode registry, palette utilities, encode/decode helpers.
 - Tools (`tools.mjs`): drawing algorithms (line, rect, ellipse, flood fill).
+- Desktop bridge (`desktop.mjs`): optional Tauri command adapter; it is inactive
+  in a regular browser.
+- Desktop host (`src-tauri/`): native window, file dialogs, filesystem writes,
+  and platform packaging.
 
 ## Data Flow
 
 ### 1) New/Open
 
 - User selects a mode (New) or opens a file (Open).
+- Tauri obtains opened files from a native dialog; browsers use a file input.
 - App resolves the mode and default view for that mode.
 - App allocates a framebuffer (`state.fb`) and, if opening a file, loads bytes.
 - App decodes the framebuffer into RGBA (`state.pixels`) using the view.
@@ -48,6 +53,8 @@ This document describes the high-level architecture and data flow of
 
 - For Apple II formats, bytes are written directly from `state.fb`.
 - For modern formats, RGBA is rasterized from `state.pixels`.
+- Tauri writes through its native save dialog; browsers use their existing file
+  picker or download fallback.
 
 ### 5) Undo/Redo
 

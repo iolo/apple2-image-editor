@@ -21,6 +21,10 @@ This document explains how files are opened, interpreted, and saved.
 5. The framebuffer is initialized and loaded with file bytes.
 6. The framebuffer is decoded into RGBA for display.
 
+In a Tauri window, the Rust host displays the native open dialog and returns
+the selected bytes to the same frontend import flow. In a browser, the hidden
+file input remains the source of the selected file.
+
 ### Custom Dimensions
 
 Pixmap and bitmap require explicit width/height. If the dimensions are not
@@ -39,6 +43,10 @@ known, the app prompts for them before initializing the framebuffer.
 
 - Apple II formats: bytes are taken directly from the framebuffer.
 - Modern formats: RGBA pixels are encoded via `toBlob` on a canvas.
+
+The Tauri host displays a native save dialog and writes the encoded bytes to
+the selected path. Browser builds retain the File System Access API and
+download-link fallbacks.
 
 ## Serialization Rules
 

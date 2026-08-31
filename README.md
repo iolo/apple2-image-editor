@@ -50,6 +50,26 @@ npm install
 npm start
 ```
 
+## Desktop app
+
+The desktop version uses Tauri 2 and keeps the same plain JavaScript frontend.
+Install the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for
+your platform, then run:
+
+```bash
+npm install
+npm run desktop:dev
+```
+
+Build platform-native installers with:
+
+```bash
+npm run desktop:build
+```
+
+Desktop builds use native open and save dialogs. The browser version continues
+to use the browser file picker and download APIs.
+
 ## See also
 
 - [apple2-image-converter](https://github.com/iolo/apple2-image-converter) by me
